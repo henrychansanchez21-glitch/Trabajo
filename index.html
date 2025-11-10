@@ -15,7 +15,7 @@
         }
         
         :root {
-            /* Colores Base (Se mantienen los tonos anteriores para el enfoque en diseño) */
+            /* Colores Base */
             --primary: #004d7a; /* Deep Navy */
             --secondary: #00a896; /* Turquesa/Acento */
             --dark: #2c3e50; /* Texto principal */
@@ -65,7 +65,7 @@
         .subtitle {
             font-size: 1.1rem;
             opacity: 0.9;
-            font-weight: 400; /* Menos énfasis en el subtítulo */
+            font-weight: 400; 
             color: var(--dark);
         }
         
@@ -88,11 +88,11 @@
             transform: translateY(0);
             opacity: 0;
             animation: cardFadeIn 0.8s forwards;
-            border-left: 5px solid var(--secondary); /* Acento lateral */
+            border-left: 5px solid var(--secondary); 
         }
         
         .user-card:hover {
-            transform: translateY(-5px); /* Pequeña elevación */
+            transform: translateY(-5px); 
             box-shadow: var(--shadow-hover);
         }
         
@@ -161,7 +161,7 @@
 
         .task-item:hover {
             background-color: rgba(0, 168, 150, 0.03); 
-            padding-left: 5px; /* Pequeño desplazamiento en hover */
+            padding-left: 5px; 
         }
         
         .task-item:last-child { border-bottom: none; }
@@ -174,7 +174,7 @@
             cursor: pointer;
             position: relative;
             appearance: none;
-            border: 2px solid var(--primary); /* Borde primario */
+            border: 2px solid var(--primary); 
             border-radius: 3px;
             transition: var(--transition);
             flex-shrink: 0;
@@ -202,7 +202,7 @@
             font-size: 1rem;
             color: var(--dark);
             transition: var(--transition);
-            font-weight: 500; /* Seminegrita para mejor lectura */
+            font-weight: 500; 
         }
         
         .task-checkbox:checked + .task-text {
@@ -218,11 +218,10 @@
             padding: 18px 0;
             font-size: 1.2rem;
             font-weight: 600;
-            color: var(--primary); /* Usa el color primario como alerta sobria */
+            color: var(--primary); 
             background: rgba(0, 77, 122, 0.05);
             border-radius: 8px;
             border: 1px solid rgba(0, 77, 122, 0.3);
-            animation: none; /* Quitamos la animación de pulso para más sobriedad */
         }
 
         .route-message i {
@@ -305,30 +304,8 @@
             }
             
             h1 {
-                font-size: 2.2rem;
+                font-size: 2.5rem;
             }
-        }
-        
-        /* Notificación de guardado */
-        .save-notification {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: var(--secondary); /* Usa el acento para la notificación */
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
-            transform: translateY(120px);
-            opacity: 0;
-            transition: transform 0.4s ease-out, opacity 0.4s ease-out;
-            z-index: 1000;
-            font-weight: 500;
-        }
-        
-        .save-notification.show {
-            transform: translateY(0);
-            opacity: 1;
         }
     </style>
 </head>
@@ -336,15 +313,15 @@
     
     <div class="container">
         <header>
-            <h1><i class="fas fa-tasks"></i> PANEL DE TAREAS</h1>
-            <p class="subtitle">Gestión de Tareas Clave</p>
+            <h1><i class="fas fa-tasks"></i> PANEL DE ASIGNACIÓN OPERACIONAL</h1>
+            <p class="subtitle">Gestión de Tareas Clave y Seguimiento de Progreso Diario.</p>
         </header>
         
         <div class="users-container" id="users-container">
             </div>
         
         <div class="stats">
-            <h3><i class="fas fa-chart-bar"></i>REPORTES TOTALES</h3>
+            <h3><i class="fas fa-chart-bar"></i> RESUMEN DE PROGRESO GLOBAL</h3>
             <div class="progress-container">
                 <div class="progress-bar">
                     <div class="progress" id="global-progress" style="width: 0%"></div>
@@ -358,12 +335,8 @@
         </div>
         
         <footer>
-            <p>©MrHenryYT</p>
+            <p>Sistema de Gestión de Tareas | Desarrollado por Ingeniería de Proyectos</p>
         </footer>
-    </div>
-
-    <div class="save-notification" id="save-notification">
-        <i class="fas fa-check-circle"></i> Sincronización de Datos Exitosa
     </div>
 
     <script>
@@ -371,9 +344,9 @@
         const tareasHenry = []; 
         const mensajeHenry = "En ruta. No tiene tareas operativas asignadas."; 
 
-        // Tareas de Carlos (12 tareas totales - Añadida 'columnas')
+        // Tareas de Carlos (12 tareas totales - Incluye 'columnas')
         const tareasCarlos = [
-            "Perfilería",
+            "Perfumería",
             "TV Wall",
             "Nichos",
             "Quiosco de teléfonos",
@@ -384,10 +357,10 @@
             "Archivos", 
             "lienzos Azteca",
             "quiosco de video juegos",
-            "columnas" // ¡NUEVA!
+            "columnas" 
         ];
 
-        // Tareas de Ammy (15 tareas totales - Añadida 'Pintura gris')
+        // Tareas de Ammy (15 tareas totales - Incluye 'Pintura gris')
         const tareasAmmy = [
             "Baño",
             "Comedor",
@@ -403,7 +376,7 @@
             "fachada",
             "parqueo",
             "bunker",
-            "Pintura gris" // ¡NUEVA!
+            "Pintura gris" 
         ];
         
         // Usuarios fijos
@@ -435,85 +408,24 @@
             return null;
         }
 
-        // Función para guardar el estado en localStorage 
-        function guardarEstado() {
-            const estado = {};
-            document.querySelectorAll('.user-card').forEach((card) => {
-                const userNombre = card.querySelector('.user-name').textContent;
-                estado[userNombre] = [];
-                
-                card.querySelectorAll('.task-item').forEach((item) => {
-                    const checkbox = item.querySelector('.task-checkbox');
-                    const completada = checkbox ? checkbox.checked : false; 
-                    estado[userNombre].push(completada);
-                });
-            });
-            
-            localStorage.setItem('taskAssignmentState', JSON.stringify(estado));
-            
-            // Mostrar notificación de guardado
-            const notification = document.getElementById('save-notification');
-            notification.classList.add('show');
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 2000);
-        }
+        /*
+            LAS FUNCIONES guardarEstado() y cargarEstado() FUERON ELIMINADAS
+        */
         
-        // Función para cargar el estado desde localStorage
-        function cargarEstado() {
-            const estadoGuardado = localStorage.getItem('taskAssignmentState');
-            if (!estadoGuardado) return;
-            
-            const estado = JSON.parse(estadoGuardado);
-            
-            document.querySelectorAll('.user-card').forEach(card => {
-                const userNombre = card.querySelector('.user-name').textContent;
-                if (estado[userNombre]) {
-                    card.querySelectorAll('.task-item').forEach((item, index) => {
-                        const checkbox = item.querySelector('.task-checkbox');
-                        if (checkbox) {
-                             if (index < estado[userNombre].length && estado[userNombre][index]) {
-                                checkbox.checked = true;
-                            }
-                        }
-                    });
-                }
-            });
-            
-            actualizarProgreso();
-        }
-        
-        // Función para crear la asignación de tareas (forzando reset para aplicar los nuevos cambios de tareas)
+        // Función para crear la asignación de tareas (Solo construye el DOM)
         function crearAsignacionTareas() {
             const usuariosContainer = document.getElementById('users-container');
-            
-            // FORZAR REINICIO: Se reinicia para garantizar que las listas de tareas más recientes (y los cambios de diseño) se apliquen.
-            localStorage.removeItem('taskAssignment');
-            localStorage.removeItem('taskAssignmentState');
+            // Ya no es necesario limpiar localStorage ni cargar estado.
             usuariosContainer.innerHTML = '';
-            
-            const asignacion = {
-                usuarios: []
-            };
             
             // Crear nueva asignación inicial
             usuarios.forEach(usuario => {
                 const tareasUsuario = obtenerTareasFijas(usuario.nombre);
-                
-                // 1. Crea la tarjeta de usuario en el DOM
                 crearTarjetaUsuario(usuario.nombre, tareasUsuario);
-                
-                // 2. Guarda la estructura de la asignación inicial en localStorage
-                asignacion.usuarios.push({
-                    nombre: usuario.nombre,
-                    tareas: tareasUsuario
-                });
             });
             
-            localStorage.setItem('taskAssignment', JSON.stringify(asignacion));
-            
-            // Cargar el estado de las tareas marcadas (será vacío al forzar el reset)
-            cargarEstado();
+            // Inicializa el progreso (sin cargar estado previo)
+            actualizarProgreso();
         }
 
         // Función auxiliar para crear una tarjeta de usuario
@@ -563,9 +475,10 @@
                     const taskCheckbox = document.createElement('input');
                     taskCheckbox.type = 'checkbox';
                     taskCheckbox.className = 'task-checkbox';
+                    
+                    // Solo actualiza el progreso, NO guarda el estado
                     taskCheckbox.addEventListener('change', function() {
                         actualizarProgreso();
-                        guardarEstado();
                     });
                     
                     const taskText = document.createElement('span');
@@ -585,7 +498,6 @@
         
         // Función para actualizar el progreso general
         function actualizarProgreso() {
-            // Solo considera tareas reales (con checkbox)
             const checkboxes = document.querySelectorAll('.task-checkbox');
             
             const tareasReales = Array.from(checkboxes).filter(cb => {
@@ -603,13 +515,6 @@
             const progressBar = document.getElementById('global-progress');
             progressBar.style.width = `${porcentaje}%`;
             
-            // Controla la animación de rayas del progreso (para el 100%)
-            if (porcentaje === 100) {
-                 progressBar.style.animationPlayState = 'running';
-            } else {
-                 progressBar.style.animationPlayState = 'paused';
-            }
-
             document.getElementById('progress-percent').textContent = `${porcentaje}%`;
             document.getElementById('completed-tasks').textContent = `${tareasCompletadas} tareas completadas`;
             document.getElementById('progress-text').textContent = 
@@ -620,12 +525,12 @@
         window.addEventListener('DOMContentLoaded', () => {
             crearAsignacionTareas();
             
-            // Guardar estado automáticamente cada 30 segundos
-            setInterval(guardarEstado, 30000);
+            /*
+                LAS FUNCIONES DE GUARDADO AUTOMÁTICO FUERON ELIMINADAS
+            */
         });
         
-        // Guardar estado cuando se cierre la página
-        window.addEventListener('beforeunload', guardarEstado);
+        // EL EVENTO 'beforeunload' FUE ELIMINADO
     </script>
 </body>
 </html>
