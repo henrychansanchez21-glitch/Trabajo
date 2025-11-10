@@ -307,6 +307,28 @@
                 font-size: 2.5rem;
             }
         }
+
+        /* Notificación de guardado RESTAURADA */
+        .save-notification {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--secondary); 
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+            transform: translateY(120px);
+            opacity: 0;
+            transition: transform 0.4s ease-out, opacity 0.4s ease-out;
+            z-index: 1000;
+            font-weight: 500;
+        }
+        
+        .save-notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -339,14 +361,18 @@
         </footer>
     </div>
 
+    <div class="save-notification" id="save-notification">
+        <i class="fas fa-check-circle"></i> Sincronización de Datos Exitosa
+    </div>
+
     <script>
         // Tareas fijas de Henry (CERO)
         const tareasHenry = []; 
         const mensajeHenry = "En ruta. No tiene tareas operativas asignadas."; 
 
-        // Tareas de Carlos (12 tareas totales - Incluye 'columnas')
+        // Tareas de Carlos (12 tareas totales - Incluye 'columnas' y 'quiosco de video juegos')
         const tareasCarlos = [
-            "Perfumería",
+            "Perfileria",
             "TV Wall",
             "Nichos",
             "Quiosco de teléfonos",
@@ -408,24 +434,77 @@
             return null;
         }
 
-        /*
-            LAS FUNCIONES guardarEstado() y cargarEstado() FUERON ELIMINADAS
-        */
+        // Función para guardar el estado en localStorage (RESTAURADA)
+        function guardarEstado() {
+            const estado = {};
+            document.querySelectorAll('.user-card').forEach((card) => {
+                const userNombre = card.querySelector('.user-name').textContent;
+                estado[userNombre] = [];
+                
+                card.querySelectorAll('.task-item').forEach((item) => {
+                    const checkbox = item.querySelector('.task-checkbox');
+                    const completada = checkbox ? checkbox.checked : false; 
+                    estado[userNombre].push(completada);
+                });
+            });
+            
+            localStorage.setItem('taskAssignmentState', JSON.stringify(estado));
+            
+            // Mostrar notificación de guardado (RESTAURADA)
+            const notification = document.getElementById('save-notification');
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 2000);
+        }
         
-        // Función para crear la asignación de tareas (Solo construye el DOM)
+        // Función para cargar el estado desde localStorage (RESTAURADA)
+        function cargarEstado() {
+            const estadoGuardado = localStorage.getItem('taskAssignmentState');
+            if (!estadoGuardado) return;
+            
+            const estado = JSON.parse(estadoGuardado);
+            
+            document.querySelectorAll('.user-card').forEach(card => {
+                const userNombre = card.querySelector('.user-name').textContent;
+                if (estado[userNombre]) {
+                    card.querySelectorAll('.task-item').forEach((item, index) => {
+                        const checkbox = item.querySelector('.task-checkbox');
+                        if (checkbox) {
+                             if (index < estado[userNombre].length && estado[userNombre][index]) {
+                                checkbox.checked = true;
+                            }
+                        }
+                    });
+                }
+            });
+            
+            actualizarProgreso();
+        }
+        
+        // Función para crear la asignación de tareas (ajustada para usar localStorage)
         function crearAsignacionTareas() {
             const usuariosContainer = document.getElementById('users-container');
-            // Ya no es necesario limpiar localStorage ni cargar estado.
             usuariosContainer.innerHTML = '';
             
-            // Crear nueva asignación inicial
+            // Crear la estructura de tarjetas en el DOM
             usuarios.forEach(usuario => {
                 const tareasUsuario = obtenerTareasFijas(usuario.nombre);
                 crearTarjetaUsuario(usuario.nombre, tareasUsuario);
             });
             
-            // Inicializa el progreso (sin cargar estado previo)
-            actualizarProgreso();
+            // 1. Verificar si las listas de tareas en localStorage son obsoletas (por si se añadieron nuevas tareas)
+            const savedTasks = localStorage.getItem('taskAssignment');
+            const currentTasks = JSON.stringify(usuarios.map(u => ({ nombre: u.nombre, tareas: obtenerTareasFijas(u.nombre) })));
+            
+            if (savedTasks !== currentTasks) {
+                // Si las listas cambiaron, forzar un reinicio limpio para aplicar las nuevas tareas
+                localStorage.removeItem('taskAssignmentState');
+                localStorage.setItem('taskAssignment', currentTasks);
+            }
+            
+            // 2. Cargar el estado guardado (si existe)
+            cargarEstado();
         }
 
         // Función auxiliar para crear una tarjeta de usuario
@@ -476,9 +555,10 @@
                     taskCheckbox.type = 'checkbox';
                     taskCheckbox.className = 'task-checkbox';
                     
-                    // Solo actualiza el progreso, NO guarda el estado
+                    // Event listener para actualizar progreso Y guardar estado (RESTAURADO)
                     taskCheckbox.addEventListener('change', function() {
                         actualizarProgreso();
+                        guardarEstado(); 
                     });
                     
                     const taskText = document.createElement('span');
@@ -503,7 +583,6 @@
             const tareasReales = Array.from(checkboxes).filter(cb => {
                 const card = cb.closest('.user-card');
                 const listContent = card.querySelector('.task-list').textContent;
-                // Excluye tarjetas con mensaje de estado o sin tareas
                 return !listContent.includes('En ruta') && !listContent.includes('Sin tareas asignadas.');
             });
             
@@ -525,12 +604,12 @@
         window.addEventListener('DOMContentLoaded', () => {
             crearAsignacionTareas();
             
-            /*
-                LAS FUNCIONES DE GUARDADO AUTOMÁTICO FUERON ELIMINADAS
-            */
+            // Guardar estado automáticamente cada 30 segundos (RESTAURADO)
+            setInterval(guardarEstado, 30000);
         });
         
-        // EL EVENTO 'beforeunload' FUE ELIMINADO
+        // Guardar estado cuando se cierre la página (RESTAURADO)
+        window.addEventListener('beforeunload', guardarEstado);
     </script>
 </body>
 </html>
