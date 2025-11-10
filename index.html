@@ -1,921 +1,631 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Gestor de Tareas + Reportes</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: linear-gradient(125deg, #0b1a2d, #1a3a5f, #24243e);
-      color: #e0f0ff;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Asignación Operacional | Minimalista</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Variables y Reseteo: Estilo Minimalista y Profesional */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            /* Colores Base (Se mantienen los tonos anteriores para el enfoque en diseño) */
+            --primary: #004d7a; /* Deep Navy */
+            --secondary: #00a896; /* Turquesa/Acento */
+            --dark: #2c3e50; /* Texto principal */
+            --light-bg: #ecf0f1; /* Fondo muy claro */
+            --card-bg: #ffffff;
+            /* Sombras sutiles para minimalismo */
+            --shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 8px 15px rgba(0, 0, 0, 0.12);
+            /* Transición más fluida */
+            --transition: all 0.3s cubic-bezier(0.2, 0.8, 0.4, 1);
+        }
+        
+        body {
+            background: var(--light-bg);
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 30px;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Contenedor Principal */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Encabezado: Limpio y Sobrio */
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding: 40px 20px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            border-top: 5px solid var(--primary);
+            transition: var(--transition);
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 5px;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            font-weight: 400; /* Menos énfasis en el subtítulo */
+            color: var(--dark);
+        }
+        
+        /* Contenedor de Tarjetas de Usuario */
+        .users-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+        
+        /* Tarjeta de Usuario: Estilo de "Ladrillo de Información" */
+        .user-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 35px;
+            transition: var(--transition);
+            position: relative;
+            transform: translateY(0);
+            opacity: 0;
+            animation: cardFadeIn 0.8s forwards;
+            border-left: 5px solid var(--secondary); /* Acento lateral */
+        }
+        
+        .user-card:hover {
+            transform: translateY(-5px); /* Pequeña elevación */
+            box-shadow: var(--shadow-hover);
+        }
+        
+        /* Animación de entrada de tarjeta */
+        @keyframes cardFadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .user-card:nth-child(1) { animation-delay: 0.1s; }
+        .user-card:nth-child(2) { animation-delay: 0.2s; }
+        .user-card:nth-child(3) { animation-delay: 0.3s; }
+        
+        /* Encabezado dentro de la tarjeta */
+        .user-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .user-avatar {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-right: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .user-name {
+            font-size: 1.7rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        /* Lista de Tareas */
+        .task-list {
+            list-style-type: none;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        
+        .task-list::-webkit-scrollbar { width: 6px; }
+        .task-list::-webkit-scrollbar-track { background: var(--light-bg); border-radius: 10px; }
+        .task-list::-webkit-scrollbar-thumb { background: rgba(0, 168, 150, 0.4); border-radius: 10px; }
+        .task-list::-webkit-scrollbar-thumb:hover { background: var(--secondary); }
+        
+        .task-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            transition: background-color 0.2s, padding-left 0.2s;
+        }
 
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-    }
+        .task-item:hover {
+            background-color: rgba(0, 168, 150, 0.03); 
+            padding-left: 5px; /* Pequeño desplazamiento en hover */
+        }
+        
+        .task-item:last-child { border-bottom: none; }
+        
+        /* Checkbox Minimalista */
+        .task-checkbox {
+            margin-right: 15px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            position: relative;
+            appearance: none;
+            border: 2px solid var(--primary); /* Borde primario */
+            border-radius: 3px;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+        
+        .task-checkbox:checked {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .task-checkbox:checked::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 10px;
+        }
+        
+        .task-text {
+            flex: 1;
+            font-size: 1rem;
+            color: var(--dark);
+            transition: var(--transition);
+            font-weight: 500; /* Seminegrita para mejor lectura */
+        }
+        
+        .task-checkbox:checked + .task-text {
+            text-decoration: line-through;
+            color: var(--secondary);
+            opacity: 0.6;
+            font-weight: 400;
+        }
 
-    #assign-btn {
-      position: fixed;
-      top: 25px;
-      left: 25px;
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #00c9ff, #92fe9d);
-      border: none;
-      color: #0b1a2d;
-      font-size: 24px;
-      font-weight: bold;
-      cursor: pointer;
-      box-shadow: 0 6px 20px rgba(0, 201, 255, 0.4);
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+        /* Mensaje de Estado (Henry: En ruta) */
+        .route-message {
+            text-align: center;
+            padding: 18px 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary); /* Usa el color primario como alerta sobria */
+            background: rgba(0, 77, 122, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 77, 122, 0.3);
+            animation: none; /* Quitamos la animación de pulso para más sobriedad */
+        }
 
-    .screen {
-      background: rgba(15, 30, 50, 0.85);
-      backdrop-filter: blur(10px);
-      border-radius: 24px;
-      padding: 32px;
-      text-align: center;
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      display: none;
-    }
-    .screen.active {
-      display: block;
-      animation: fadeIn 0.5s ease;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+        .route-message i {
+            margin-right: 10px;
+            color: var(--secondary);
+        }
+        
+        /* Estadísticas y Progreso */
+        .stats {
+            margin-top: 35px;
+            text-align: center;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            border-top: 5px solid var(--primary);
+        }
+        
+        .stats h3 {
+            margin-bottom: 20px;
+            color: var(--dark);
+            font-size: 1.6rem;
+            font-weight: 600;
+        }
+        
+        .progress-container {
+            position: relative;
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            height: 15px; 
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 8px;
+            transition: width 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            position: relative;
+        }
 
-    h1, h2, h3 {
-      font-weight: 800;
-      margin: 16px 0;
-      background: linear-gradient(to right, #00c9ff, #92fe9d);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-
-    .counter-box {
-      background: rgba(0, 40, 80, 0.6);
-      padding: 16px;
-      border-radius: 16px;
-      margin: 16px 0 24px;
-      font-size: 20px;
-      font-weight: 700;
-      color: #00ffcc;
-    }
-
-    .user-card {
-      background: rgba(25, 45, 75, 0.6);
-      border-radius: 20px;
-      padding: 24px;
-      margin: 20px 0;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      border: 1px solid rgba(0, 200, 255, 0.2);
-    }
-    .user-card:hover {
-      transform: translateY(-5px);
-      background: rgba(35, 60, 100, 0.7);
-      box-shadow: 0 8px 20px rgba(0, 150, 255, 0.3);
-    }
-
-    .user-name {
-      font-size: 20px;
-      font-weight: 700;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-    .user-stats {
-      font-size: 15px;
-      color: #88ccff;
-      margin-bottom: 12px;
-    }
-
-    .reports-btn {
-      background: rgba(0, 100, 200, 0.3);
-      border: 1px solid rgba(0, 200, 255, 0.4);
-      color: #4fc3f7;
-      padding: 16px;
-      border-radius: 20px;
-      margin: 20px 0;
-      font-size: 18px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-    .reports-btn:hover {
-      background: rgba(0, 120, 220, 0.4);
-      transform: translateY(-3px);
-      box-shadow: 0 6px 16px rgba(0, 150, 255, 0.3);
-    }
-
-    .report-entry {
-      background: rgba(0, 30, 60, 0.5);
-      padding: 16px;
-      border-radius: 16px;
-      margin-bottom: 16px;
-      text-align: left;
-      border-left: 4px solid #00c9ff;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .report-entry:hover {
-      background: rgba(0, 40, 80, 0.6);
-    }
-    .report-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    .report-user {
-      font-weight: bold;
-      color: #00ffcc;
-      font-size: 17px;
-    }
-    .report-date {
-      color: #8888ff;
-      font-size: 14px;
-    }
-    .report-text {
-      color: #e0f0ff;
-      white-space: pre-wrap;
-      line-height: 1.5;
-    }
-
-    .notes-section {
-      margin: 20px 0;
-      text-align: left;
-    }
-    .notes-section textarea {
-      width: 100%;
-      height: 100px;
-      padding: 14px;
-      border-radius: 14px;
-      border: 1px solid rgba(0, 200, 255, 0.3);
-      background: rgba(10, 25, 45, 0.8);
-      color: white;
-      font-size: 16px;
-      font-family: 'Segoe UI', monospace;
-      outline: none;
-      resize: vertical;
-      margin-bottom: 10px;
-    }
-    .notes-section .save-btn {
-      background: linear-gradient(120deg, #00c9ff, #92fe9d);
-      color: #0b1a2d;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      width: 100%;
-      margin-bottom: 20px;
-    }
-
-    .note-entry {
-      background: rgba(0, 30, 60, 0.4);
-      padding: 14px;
-      border-radius: 14px;
-      margin-bottom: 12px;
-      border-left: 3px solid #00c9ff;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .note-entry:hover {
-      background: rgba(0, 40, 80, 0.5);
-    }
-    .note-entry .note-text {
-      color: #e0f0ff;
-      margin-bottom: 6px;
-      white-space: pre-wrap;
-    }
-    .note-entry .note-date {
-      color: #8888ff;
-      font-size: 13px;
-    }
-
-    .menu-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    .menu-buttons {
-      display: flex;
-      gap: 8px;
-    }
-    .menu-btn {
-      background: rgba(0, 150, 255, 0.2);
-      color: #00c9ff;
-      border: 1px solid rgba(0, 200, 255, 0.4);
-      padding: 8px 12px;
-      border-radius: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      font-size: 13px;
-      white-space: nowrap;
-    }
-    .menu-btn.active {
-      background: rgba(0, 200, 255, 0.3);
-      color: white;
-    }
-    .clear-btn {
-      background: #ff4d4d;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-
-    .assign-form input,
-    .assign-form select {
-      width: 100%;
-      padding: 14px;
-      margin: 12px 0;
-      border-radius: 14px;
-      border: 1px solid rgba(0, 200, 255, 0.3);
-      background: rgba(10, 25, 45, 0.8);
-      color: white;
-      font-size: 16px;
-      outline: none;
-    }
-    .assign-form button {
-      background: linear-gradient(120deg, #00c9ff, #92fe9d);
-      color: #0b1a2d;
-      border: none;
-      padding: 14px;
-      border-radius: 14px;
-      font-size: 17px;
-      font-weight: 700;
-      width: 100%;
-      cursor: pointer;
-      margin-top: 14px;
-    }
-
-    .task-list {
-      margin: 20px 0;
-      text-align: left;
-    }
-    .task-item {
-      background: rgba(20, 40, 70, 0.7);
-      padding: 16px;
-      margin: 14px 0;
-      border-radius: 16px;
-      display: flex;
-      align-items: flex-start;
-      border-left: 4px solid #00c9ff;
-    }
-    .task-checkbox {
-      margin-right: 14px;
-      margin-top: 3px;
-      width: 20px;
-      height: 20px;
-      accent-color: #00c9ff;
-    }
-    .task-text {
-      font-size: 17px;
-      color: #d0f0ff;
-    }
-    .archived-item {
-      background: rgba(10, 30, 50, 0.7);
-      padding: 16px;
-      margin: 14px 0;
-      border-radius: 16px;
-      border-left: 4px solid #ff6b6b;
-    }
-    .archived-text {
-      font-size: 17px;
-      color: #ff9999;
-      margin-bottom: 6px;
-    }
-    .archived-date {
-      font-size: 13px;
-      color: #ff6b6b;
-    }
-
-    .back-btn {
-      margin-top: 24px;
-      background: none;
-      color: #00c9ff;
-      border: none;
-      cursor: pointer;
-      font-size: 17px;
-      font-weight: 700;
-      text-decoration: underline;
-    }
-
-    #inactivity-alert {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #ff4d4d;
-      color: white;
-      padding: 12px 24px;
-      border-radius: 12px;
-      font-weight: bold;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      z-index: 2000;
-      display: none;
-    }
-
-    .upload-btn {
-      background: rgba(50, 180, 80, 0.3);
-      border: 1px solid rgba(50, 200, 100, 0.4);
-      color: #88ff88;
-      padding: 14px;
-      border-radius: 18px;
-      font-size: 17px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      transition: all 0.3s;
-    }
-    .upload-btn:hover {
-      background: rgba(50, 180, 80, 0.4);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(50, 200, 100, 0.25);
-    }
-
-    .contact-btn {
-      background: rgba(40, 150, 200, 0.3);
-      border: 1px solid rgba(40, 180, 230, 0.4);
-      color: #66ccff;
-      padding: 14px;
-      border-radius: 18px;
-      font-size: 17px;
-      font-weight: 700;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      transition: all 0.3s;
-    }
-    .contact-btn:hover {
-      background: rgba(40, 150, 200, 0.4);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(40, 180, 230, 0.25);
-    }
-  </style>
+        .progress::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 10px;
+            background: rgba(255, 255, 255, 0.3);
+            transform: skewX(-10deg);
+        }
+        
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.95rem;
+        }
+        
+        /* Pie de página */
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            color: var(--secondary);
+            font-size: 0.9rem;
+            padding: 15px;
+            opacity: 0.7;
+        }
+        
+        /* Media Queries para responsividad */
+        @media (max-width: 768px) {
+            .users-container {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+        }
+        
+        /* Notificación de guardado */
+        .save-notification {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--secondary); /* Usa el acento para la notificación */
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+            transform: translateY(120px);
+            opacity: 0;
+            transition: transform 0.4s ease-out, opacity 0.4s ease-out;
+            z-index: 1000;
+            font-weight: 500;
+        }
+        
+        .save-notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
 </head>
 <body>
-
-  <button id="assign-btn" onclick="requestAccess()" title="Asignar tarea">➕</button>
-  <div id="inactivity-alert">⏰ ¡Marca al menos una tarea!</div>
-
-  <div class="container">
-    <div id="main-menu" class="screen active">
-      <h1>📒Control de Reportes📒</h1>
-      <div class="counter-box">
-        Tareas totales: <span id="total-counter">0</span>
-      </div>
-      
-      <div class="user-card" onclick="enterAsUser('henry')">
-        <div class="user-name">👨 Henry</div>
-        <div class="user-stats" id="stats-henry">Tareas: 0</div>
-      </div>
-      
-      <div class="user-card" onclick="enterAsUser('colli')">
-        <div class="user-name">🧑‍🦱 Colli</div>
-        <div class="user-stats" id="stats-colli">Tareas: 0</div>
-      </div>
-      
-      <div class="user-card" onclick="enterAsUser('amy')">
-        <div class="user-name">👩 Amy</div>
-        <div class="user-stats" id="stats-amy">Tareas: 0</div>
-      </div>
-
-      <button class="reports-btn" onclick="showScreen('report-screen')">
-        📒Trabajos del dia📒
-      </button>
-
-      <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 14px;">
-        <label class="upload-btn">
-          📸 Subir foto
-          <input type="file" accept="image/*" capture="environment" id="photo-upload" style="display:none;">
-        </label>
-
-        <a href="https://wa.me/50240331143" target="_blank" class="contact-btn">
-          📲 Contactar
-        </a>
-      </div>
-    </div>
-
-    <div id="report-screen" class="screen">
-      <h2>📒Reportes</h2>
-      <div id="all-reports"></div>
-      <button class="back-btn" onclick="showScreen('main-menu')">← Volver al inicio</button>
-    </div>
-
-    <div id="assign-menu" class="screen">
-      <h2>➕ Nueva Tarea</h2>
-      <div class="assign-form">
-        <input type="text" id="task-input" placeholder="Ej: Corregir bug..." maxlength="100" />
-        <select id="assign-to">
-          <option value="">— Asignar a —</option>
-          <option value="henry">Henry</option>
-          <option value="colli">Colli</option>
-          <option value="amy">Amy</option>
-        </select>
-        <button onclick="assignTask()">✅ Asignar</button>
-      </div>
-      <button class="back-btn" onclick="showScreen('main-menu')">← Volver</button>
-    </div>
-
-    <div id="menu-henry" class="screen" data-user="henry">
-      <h2>👨 Tareas de Henry</h2>
-      <div class="menu-header">
-        <div></div>
-        <div class="menu-buttons">
-          <button class="menu-btn active" onclick="showUserView('henry', 'pending')">Pendientes⏰</button>
-          <button class="menu-btn" onclick="showUserView('henry', 'archived')">📁 Archivo</button>
-          <button class="menu-btn" onclick="showUserView('henry', 'notes')">📝 Notas</button>
-        </div>
-      </div>
-      <div id="tasks-henry-pending" class="task-list"></div>
-      <div id="tasks-henry-archived" class="task-list" style="display:none;"></div>
-      <div id="notes-henry" class="notes-section" style="display:none;">
-        <textarea id="notes-text-henry" placeholder="Escribe tu nota de hoy..."></textarea>
-        <button class="save-btn" onclick="addNote('henry')">➕ Añadir nota</button>
-        <div id="notes-history-henry"></div>
-      </div>
-      <button class="clear-btn" onclick="clearArchivedTasks('henry')">🗑️ Borrar archivadas</button>
-      <button class="back-btn" onclick="showScreen('main-menu')">← Volver</button>
-    </div>
-
-    <div id="menu-colli" class="screen" data-user="colli">
-      <h2>🧑‍🦱 Tareas de Colli</h2>
-      <div class="menu-header">
-        <div></div>
-        <div class="menu-buttons">
-          <button class="menu-btn active" onclick="showUserView('colli', 'pending')">Pendientes⏰</button>
-          <button class="menu-btn" onclick="showUserView('colli', 'archived')">📁 Archivo</button>
-          <button class="menu-btn" onclick="showUserView('colli', 'notes')">📝 Notas</button>
-        </div>
-      </div>
-      <div id="tasks-colli-pending" class="task-list"></div>
-      <div id="tasks-colli-archived" class="task-list" style="display:none;"></div>
-      <div id="notes-colli" class="notes-section" style="display:none;">
-        <textarea id="notes-text-colli" placeholder="Escribe tu nota de hoy..."></textarea>
-        <button class="save-btn" onclick="addNote('colli')">➕ Añadir nota</button>
-        <div id="notes-history-colli"></div>
-      </div>
-      <button class="clear-btn" onclick="clearArchivedTasks('colli')">🗑️ Borrar archivadas</button>
-      <button class="back-btn" onclick="showScreen('main-menu')">← Volver</button>
-    </div>
-
-    <div id="menu-amy" class="screen" data-user="amy">
-      <h2>👩 Tareas de Amy</h2>
-      <div class="menu-header">
-        <div></div>
-        <div class="menu-buttons">
-          <button class="menu-btn active" onclick="showUserView('amy', 'pending')">Pendientes⏰</button>
-          <button class="menu-btn" onclick="showUserView('amy', 'archived')">📁 Archivo</button>
-          <button class="menu-btn" onclick="showUserView('amy', 'notes')">📝 Notas</button>
-        </div>
-      </div>
-      <div id="tasks-amy-pending" class="task-list"></div>
-      <div id="tasks-amy-archived" class="task-list" style="display:none;"></div>
-      <div id="notes-amy" class="notes-section" style="display:none;">
-        <textarea id="notes-text-amy" placeholder="Escribe tu nota de hoy..."></textarea>
-        <button class="save-btn" onclick="addNote('amy')">➕ Añadir nota</button>
-        <div id="notes-history-amy"></div>
-      </div>
-      <button class="clear-btn" onclick="clearArchivedTasks('amy')">🗑️ Borrar archivadas</button>
-      <button class="back-btn" onclick="showScreen('main-menu')">← Volver</button>
-    </div>
-  </div>
-
-  <script>
-    const ACCESS_KEY = "0110";
-    let tasks = { henry: [], colli: [], amy: [] };
-    let userNotes = { henry: [], colli: [], amy: [] };
-    let userNames = { henry: "", colli: "", amy: "" };
-    let inactivityTimers = { henry: null, colli: null, amy: null };
-    let hasCompletedTask = { henry: false, colli: false, amy: false };
-    const expirationTimers = new Map();
-    let audioContext = null;
-
-    // ✅ Nuevas funciones para borrar notas
-    function confirmDeleteNote(user, index) {
-      if (confirm("⚠️ ¿Borrar esta nota?")) {
-        userNotes[user].splice(index, 1);
-        saveAll();
-        renderNotesHistory(user);
-        alert("✅ Nota eliminada.");
-      }
-    }
-
-    function confirmDeleteNoteGlobal(user, index) {
-      if (confirm("⚠️ ¿Borrar esta nota de " + (userNames[user] || user) + "?")) {
-        userNotes[user].splice(index, 1);
-        saveAll();
-        renderAllReports();
-        alert("✅ Nota eliminada.");
-      }
-    }
-
-    function loadData() {
-      try {
-        const savedTasks = localStorage.getItem('userTasks');
-        const savedNotes = localStorage.getItem('userNotes');
-        const savedNames = localStorage.getItem('userNames');
-
-        if (savedTasks) tasks = JSON.parse(savedTasks);
-        if (savedNotes) {
-          const parsed = JSON.parse(savedNotes);
-          userNotes.henry = Array.isArray(parsed.henry) ? parsed.henry : [];
-          userNotes.colli = Array.isArray(parsed.colli) ? parsed.colli : [];
-          userNotes.amy = Array.isArray(parsed.amy) ? parsed.amy : [];
-        }
-        if (savedNames) userNames = JSON.parse(savedNames);
-      } catch (e) {
-        console.warn("Error al cargar datos. Usando valores por defecto.");
-      }
-    }
-
-    function saveAll() {
-      try {
-        localStorage.setItem('userTasks', JSON.stringify(tasks));
-        localStorage.setItem('userNotes', JSON.stringify(userNotes));
-        localStorage.setItem('userNames', JSON.stringify(userNames));
-      } catch (e) {
-        console.error("No se pudo guardar en localStorage.");
-        alert("⚠️ No se pudieron guardar los datos.");
-      }
-      updateCounters();
-    }
-
-    function isTaskDuplicate(text) {
-      const norm = text.trim().toLowerCase();
-      for (const user in tasks) {
-        if (tasks[user].some(t => t.text.trim().toLowerCase() === norm)) return true;
-      }
-      return false;
-    }
-
-    function countPendingTasks() {
-      let total = 0;
-      for (const user in tasks) {
-        total += tasks[user].filter(t => !t.completed).length;
-      }
-      return total;
-    }
-
-    function updateCounters() {
-      const pending = countPendingTasks();
-      document.getElementById('total-counter').textContent = pending;
-      document.getElementById('stats-henry').textContent = `Tareas: ${tasks.henry.filter(t => !t.completed).length}`;
-      document.getElementById('stats-colli').textContent = `Tareas: ${tasks.colli.filter(t => !t.completed).length}`;
-      document.getElementById('stats-amy').textContent = `Tareas: ${tasks.amy.filter(t => !t.completed).length}`;
-    }
-
-    function formatDateLong(dateStr) {
-      const d = new Date(dateStr);
-      return d.toLocaleString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    }
-
-    function formatDate(iso) {
-      if (!iso) return '';
-      return new Date(iso).toLocaleString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    }
-
-    // ✅ Renderizado con capacidad de borrar (global)
-    function renderAllReports() {
-      const container = document.getElementById('all-reports');
-      let allNotes = [];
-
-      ['henry', 'colli', 'amy'].forEach(user => {
-        const notes = userNotes[user] || [];
-        const displayName = userNames[user] || user.charAt(0).toUpperCase() + user.slice(1);
-        notes.forEach((note, index) => {
-          allNotes.push({
-            user: user,
-            displayName: displayName,
-            index: index,
-            date: note.date,
-            text: note.text
-          });
-        });
-      });
-
-      if (allNotes.length === 0) {
-        container.innerHTML = '<p style="color:#6688aa; text-align:center;">No hay reportes guardados.</p>';
-        return;
-      }
-
-      allNotes.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-      let html = '<h3>Reportes del día (toca para borrar)</h3>';
-      allNotes.forEach(entry => {
-        html += `
-          <div class="report-entry" onclick="confirmDeleteNoteGlobal('${entry.user}', ${entry.index})">
-            <div class="report-header">
-              <div class="report-user">${entry.displayName}</div>
-              <div class="report-date">${formatDateLong(entry.date)}</div>
+    
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-tasks"></i> PANEL DE TAREAS</h1>
+            <p class="subtitle">Gestión de Tareas Clave</p>
+        </header>
+        
+        <div class="users-container" id="users-container">
             </div>
-            <div class="report-text">${entry.text}</div>
-          </div>
-        `;
-      });
-      container.innerHTML = html;
-    }
+        
+        <div class="stats">
+            <h3><i class="fas fa-chart-bar"></i>REPORTES TOTALES</h3>
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress" id="global-progress" style="width: 0%"></div>
+                </div>
+                <div class="progress-info">
+                    <span id="completed-tasks">0 tareas completadas</span>
+                    <span id="progress-percent">0%</span>
+                </div>
+            </div>
+            <p id="progress-text">Progreso general del equipo</p>
+        </div>
+        
+        <footer>
+            <p>©MrHenryYT</p>
+        </footer>
+    </div>
 
-    function requestName(user) {
-      let name = "";
-      while (true) {
-        name = prompt(`🔒 Ingresa tu nombre para ${user.charAt(0).toUpperCase() + user.slice(1)}:`);
-        if (name !== null && name.trim() !== "") {
-          return name.trim();
+    <div class="save-notification" id="save-notification">
+        <i class="fas fa-check-circle"></i> Sincronización de Datos Exitosa
+    </div>
+
+    <script>
+        // Tareas fijas de Henry (CERO)
+        const tareasHenry = []; 
+        const mensajeHenry = "En ruta. No tiene tareas operativas asignadas."; 
+
+        // Tareas de Carlos (12 tareas totales - Añadida 'columnas')
+        const tareasCarlos = [
+            "Perfilería",
+            "TV Wall",
+            "Nichos",
+            "Quiosco de teléfonos",
+            "Quioscos de uso personal",
+            "Quiosco de electrodomésticos",
+            "Góndolas",
+            "escritorios de atención al cliente",
+            "Archivos", 
+            "lienzos Azteca",
+            "quiosco de video juegos",
+            "columnas" // ¡NUEVA!
+        ];
+
+        // Tareas de Ammy (15 tareas totales - Añadida 'Pintura gris')
+        const tareasAmmy = [
+            "Baño",
+            "Comedor",
+            "Site",
+            "Luces",
+            "Planta",
+            "Techo",
+            "Regillas",
+            "Tinacos",
+            "Luz de corredor",
+            "góndolas",
+            "bodega",
+            "fachada",
+            "parqueo",
+            "bunker",
+            "Pintura gris" // ¡NUEVA!
+        ];
+        
+        // Usuarios fijos
+        const usuarios = [
+            { nombre: "Henry", tareas: tareasHenry.length, mensaje: mensajeHenry },
+            { nombre: "Carlos", tareas: tareasCarlos.length }, 
+            { nombre: "Ammy", tareas: tareasAmmy.length } 
+        ];
+        
+        // Función para obtener tareas fijas según el usuario
+        function obtenerTareasFijas(nombreUsuario) {
+            if (nombreUsuario === "Henry") {
+                return tareasHenry;
+            }
+            if (nombreUsuario === "Carlos") {
+                return tareasCarlos;
+            }
+            if (nombreUsuario === "Ammy") {
+                return tareasAmmy;
+            }
+            return [];
         }
-      }
-    }
-
-    function startInactivityTimer(user) {
-      if (inactivityTimers[user]) clearTimeout(inactivityTimers[user]);
-      hasCompletedTask[user] = false;
-      inactivityTimers[user] = setTimeout(() => {
-        if (!hasCompletedTask[user]) {
-          playNotificationSound();
-          showInactivityAlert(user);
+        
+        // Función para obtener el mensaje de estado (solo para Henry)
+        function obtenerMensajeEstado(nombreUsuario) {
+            if (nombreUsuario === "Henry") {
+                return mensajeHenry;
+            }
+            return null;
         }
-      }, 8000);
-    }
 
-    function enterAsUser(user) {
-      if (!userNames[user] || userNames[user].trim() === "") {
-        userNames[user] = requestName(user);
-        saveAll();
-      }
-      showScreen(`menu-${user}`);
-      startInactivityTimer(user);
-      document.getElementById(`notes-text-${user}`).value = "";
-      renderNotesHistory(user);
-    }
-
-    function showInactivityAlert(user) {
-      const name = userNames[user] || user.charAt(0).toUpperCase() + user.slice(1);
-      const alertDiv = document.getElementById('inactivity-alert');
-      alertDiv.textContent = `⏰ ${name}, ¡marca al menos una tarea!`;
-      alertDiv.style.display = 'block';
-      setTimeout(() => alertDiv.style.display = 'none', 4000);
-    }
-
-    function playNotificationSound() {
-      try {
-        if (!audioContext) {
-          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        // Función para guardar el estado en localStorage 
+        function guardarEstado() {
+            const estado = {};
+            document.querySelectorAll('.user-card').forEach((card) => {
+                const userNombre = card.querySelector('.user-name').textContent;
+                estado[userNombre] = [];
+                
+                card.querySelectorAll('.task-item').forEach((item) => {
+                    const checkbox = item.querySelector('.task-checkbox');
+                    const completada = checkbox ? checkbox.checked : false; 
+                    estado[userNombre].push(completada);
+                });
+            });
+            
+            localStorage.setItem('taskAssignmentState', JSON.stringify(estado));
+            
+            // Mostrar notificación de guardado
+            const notification = document.getElementById('save-notification');
+            notification.classList.add('show');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 2000);
         }
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        oscillator.type = 'sine';
-        oscillator.frequency.value = 600;
-        gainNode.gain.value = 0.1;
-        oscillator.start();
-        gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.5);
-        oscillator.stop(audioContext.currentTime + 0.5);
-      } catch (e) {
-        console.log("Sonido no disponible.");
-      }
-    }
+        
+        // Función para cargar el estado desde localStorage
+        function cargarEstado() {
+            const estadoGuardado = localStorage.getItem('taskAssignmentState');
+            if (!estadoGuardado) return;
+            
+            const estado = JSON.parse(estadoGuardado);
+            
+            document.querySelectorAll('.user-card').forEach(card => {
+                const userNombre = card.querySelector('.user-name').textContent;
+                if (estado[userNombre]) {
+                    card.querySelectorAll('.task-item').forEach((item, index) => {
+                        const checkbox = item.querySelector('.task-checkbox');
+                        if (checkbox) {
+                             if (index < estado[userNombre].length && estado[userNombre][index]) {
+                                checkbox.checked = true;
+                            }
+                        }
+                    });
+                }
+            });
+            
+            actualizarProgreso();
+        }
+        
+        // Función para crear la asignación de tareas (forzando reset para aplicar los nuevos cambios de tareas)
+        function crearAsignacionTareas() {
+            const usuariosContainer = document.getElementById('users-container');
+            
+            // FORZAR REINICIO: Se reinicia para garantizar que las listas de tareas más recientes (y los cambios de diseño) se apliquen.
+            localStorage.removeItem('taskAssignment');
+            localStorage.removeItem('taskAssignmentState');
+            usuariosContainer.innerHTML = '';
+            
+            const asignacion = {
+                usuarios: []
+            };
+            
+            // Crear nueva asignación inicial
+            usuarios.forEach(usuario => {
+                const tareasUsuario = obtenerTareasFijas(usuario.nombre);
+                
+                // 1. Crea la tarjeta de usuario en el DOM
+                crearTarjetaUsuario(usuario.nombre, tareasUsuario);
+                
+                // 2. Guarda la estructura de la asignación inicial en localStorage
+                asignacion.usuarios.push({
+                    nombre: usuario.nombre,
+                    tareas: tareasUsuario
+                });
+            });
+            
+            localStorage.setItem('taskAssignment', JSON.stringify(asignacion));
+            
+            // Cargar el estado de las tareas marcadas (será vacío al forzar el reset)
+            cargarEstado();
+        }
 
-    function requestAccess() {
-      const input = prompt("🔑 Clave:");
-      if (input === ACCESS_KEY) {
-        showScreen('assign-menu');
-      } else if (input !== null) {
-        alert("❌ Acceso denegado.");
-      }
-    }
+        // Función auxiliar para crear una tarjeta de usuario
+        function crearTarjetaUsuario(nombre, tareas) {
+            const usuariosContainer = document.getElementById('users-container');
+            const mensajeEstado = obtenerMensajeEstado(nombre);
+            
+            const userCard = document.createElement('div');
+            userCard.className = 'user-card';
+            
+            const userHeader = document.createElement('div');
+            userHeader.className = 'user-header';
+            
+            const userAvatar = document.createElement('div');
+            userAvatar.className = 'user-avatar';
+            userAvatar.textContent = nombre.charAt(0);
+            
+            const userName = document.createElement('div');
+            userName.className = 'user-name';
+            userName.textContent = nombre;
+            
+            userHeader.appendChild(userAvatar);
+            userHeader.appendChild(userName);
+            
+            const taskList = document.createElement('ul');
+            taskList.className = 'task-list';
+            
+            if (mensajeEstado) {
+                // Henry: Muestra el mensaje de estado
+                const messageItem = document.createElement('li');
+                messageItem.className = 'route-message';
+                messageItem.innerHTML = `<i class="fas fa-truck-moving"></i> ${mensajeEstado}`;
+                taskList.appendChild(messageItem);
+            } else if (tareas.length === 0) {
+                // Mensaje genérico de sin tareas
+                const emptyMessage = document.createElement('li');
+                emptyMessage.className = 'task-item';
+                emptyMessage.style.justifyContent = 'center';
+                emptyMessage.innerHTML = '<span class="task-text" style="color:var(--secondary);">Sin tareas asignadas.</span>';
+                taskList.appendChild(emptyMessage);
+            } else {
+                // Carlos y Ammy: Muestran la lista de tareas
+                tareas.forEach(tarea => {
+                    const taskItem = document.createElement('li');
+                    taskItem.className = 'task-item';
+                    
+                    const taskCheckbox = document.createElement('input');
+                    taskCheckbox.type = 'checkbox';
+                    taskCheckbox.className = 'task-checkbox';
+                    taskCheckbox.addEventListener('change', function() {
+                        actualizarProgreso();
+                        guardarEstado();
+                    });
+                    
+                    const taskText = document.createElement('span');
+                    taskText.className = 'task-text';
+                    taskText.textContent = tarea;
+                    
+                    taskItem.appendChild(taskCheckbox);
+                    taskItem.appendChild(taskText);
+                    taskList.appendChild(taskItem);
+                });
+            }
+            
+            userCard.appendChild(userHeader);
+            userCard.appendChild(taskList);
+            usuariosContainer.appendChild(userCard);
+        }
+        
+        // Función para actualizar el progreso general
+        function actualizarProgreso() {
+            // Solo considera tareas reales (con checkbox)
+            const checkboxes = document.querySelectorAll('.task-checkbox');
+            
+            const tareasReales = Array.from(checkboxes).filter(cb => {
+                const card = cb.closest('.user-card');
+                const listContent = card.querySelector('.task-list').textContent;
+                // Excluye tarjetas con mensaje de estado o sin tareas
+                return !listContent.includes('En ruta') && !listContent.includes('Sin tareas asignadas.');
+            });
+            
+            const totalTareas = tareasReales.length;
+            const tareasCompletadas = tareasReales.filter(checkbox => checkbox.checked).length;
+            
+            const porcentaje = totalTareas > 0 ? Math.round((tareasCompletadas / totalTareas) * 100) : 0;
+            
+            const progressBar = document.getElementById('global-progress');
+            progressBar.style.width = `${porcentaje}%`;
+            
+            // Controla la animación de rayas del progreso (para el 100%)
+            if (porcentaje === 100) {
+                 progressBar.style.animationPlayState = 'running';
+            } else {
+                 progressBar.style.animationPlayState = 'paused';
+            }
 
-    function assignTask() {
-      const text = document.getElementById('task-input').value.trim();
-      const user = document.getElementById('assign-to').value;
-      if (!text || !user) return alert("⚠️ Completa los campos.");
-      if (isTaskDuplicate(text)) return alert("❌ Tarea repetida.");
-
-      if (!userNames[user] || userNames[user].trim() === "") {
-        userNames[user] = requestName(user);
-        saveAll();
-      }
-
-      tasks[user].push({
-        id: Date.now(),
-        text: text,
-        completed: false,
-        completionDate: null
-      });
-      saveAll();
-
-      document.getElementById('task-input').value = '';
-      document.getElementById('assign-to').value = '';
-      alert("✅ Tarea asignada.");
-    }
-
-    function clearArchivedTasks(user) {
-      if (confirm(`⚠️ ¿Borrar todas las tareas archivadas de ${userNames[user] || user}?`)) {
-        const archivedIds = tasks[user].filter(t => t.completed).map(t => t.id);
-        archivedIds.forEach(id => {
-          const timer = expirationTimers.get(id);
-          if (timer) {
-            clearTimeout(timer.timerId);
-            expirationTimers.delete(id);
-          }
+            document.getElementById('progress-percent').textContent = `${porcentaje}%`;
+            document.getElementById('completed-tasks').textContent = `${tareasCompletadas} tareas completadas`;
+            document.getElementById('progress-text').textContent = 
+                `${tareasCompletadas} de ${totalTareas} tareas completadas (${porcentaje}%)`;
+        }
+        
+        // Inicializar el sistema al cargar la página
+        window.addEventListener('DOMContentLoaded', () => {
+            crearAsignacionTareas();
+            
+            // Guardar estado automáticamente cada 30 segundos
+            setInterval(guardarEstado, 30000);
         });
-        tasks[user] = tasks[user].filter(t => !t.completed);
-        saveAll();
-        renderArchivedTasks(user);
-        alert("✅ Archivadas eliminadas.");
-      }
-    }
-
-    function scheduleAutoDelete(user, taskId) {
-      const timerId = setTimeout(() => {
-        tasks[user] = tasks[user].filter(t => t.id !== taskId);
-        saveAll();
-        if (document.getElementById(`menu-${user}`).classList.contains('active')) {
-          renderArchivedTasks(user);
-        }
-        expirationTimers.delete(taskId);
-      }, 28800000);
-      expirationTimers.set(taskId, { timerId, user });
-    }
-
-    function toggleTaskCompletion(user, taskId) {
-      const task = tasks[user].find(t => t.id === taskId);
-      if (task && !task.completed) {
-        task.completed = true;
-        task.completionDate = new Date().toISOString();
-        hasCompletedTask[user] = true;
-        saveAll();
-        renderPendingTasks(user);
-        renderArchivedTasks(user);
-        scheduleAutoDelete(user, taskId);
-      }
-    }
-
-    function addNote(user) {
-      const textarea = document.getElementById(`notes-text-${user}`);
-      const text = textarea.value.trim();
-      if (!text) {
-        alert("⚠️ Por favor, escribe algo antes de guardar.");
-        return;
-      }
-
-      const newNote = {
-        date: new Date().toISOString(),
-        text: text
-      };
-
-      if (!Array.isArray(userNotes[user])) {
-        userNotes[user] = [];
-      }
-      userNotes[user].push(newNote);
-      saveAll();
-
-      textarea.value = "";
-      renderNotesHistory(user);
-      alert("✅ Nota añadida al historial.");
-    }
-
-    // ✅ Renderizado con capacidad de borrar (por usuario)
-    function renderNotesHistory(user) {
-      const container = document.getElementById(`notes-history-${user}`);
-      const notes = userNotes[user] || [];
-      if (notes.length === 0) {
-        container.innerHTML = '<p style="color:#6688aa; text-align:center;">No hay notas guardadas.</p>';
-        return;
-      }
-
-      const sortedNotes = [...notes].reverse();
-      let html = '<h3>Historial de notas (toca para borrar)</h3>';
-      sortedNotes.forEach((entry, index) => {
-        const realIndex = notes.length - 1 - index;
-        html += `
-          <div class="note-entry" onclick="confirmDeleteNote('${user}', ${realIndex})">
-            <div class="note-text">${entry.text}</div>
-            <div class="note-date">${formatDateLong(entry.date)}</div>
-          </div>
-        `;
-      });
-      container.innerHTML = html;
-    }
-
-    function renderPendingTasks(user) {
-      const el = document.getElementById(`tasks-${user}-pending`);
-      el.innerHTML = '';
-      const list = tasks[user].filter(t => !t.completed);
-      if (list.length === 0) {
-        el.innerHTML = '<p style="color:#6688aa;">No hay tareas pendientes.</p>';
-        return;
-      }
-      list.forEach(t => {
-        const div = document.createElement('div');
-        div.className = 'task-item';
-        div.innerHTML = `
-          <input type="checkbox" class="task-checkbox"
-                 onchange="toggleTaskCompletion('${user}', ${t.id})">
-          <div style="text-align:left; flex:1;">
-            <div class="task-text">${t.text}</div>
-          </div>
-        `;
-        el.appendChild(div);
-      });
-    }
-
-    function renderArchivedTasks(user) {
-      const el = document.getElementById(`tasks-${user}-archived`);
-      if (!el) return;
-      el.innerHTML = '';
-      const list = tasks[user].filter(t => t.completed);
-      if (list.length === 0) {
-        el.innerHTML = '<p style="color:#6688aa;">No hay tareas archivadas.</p>';
-        return;
-      }
-      list.forEach(t => {
-        const div = document.createElement('div');
-        div.className = 'archived-item';
-        div.innerHTML = `
-          <div class="archived-text">✓ ${t.text}</div>
-          <div class="archived-date">Finalizada el ${formatDate(t.completionDate)}</div>
-        `;
-        el.appendChild(div);
-      });
-    }
-
-    function showUserView(user, view) {
-      document.getElementById(`tasks-${user}-pending`).style.display = 'none';
-      document.getElementById(`tasks-${user}-archived`).style.display = 'none';
-      document.getElementById(`notes-${user}`).style.display = 'none';
-      document.querySelectorAll(`#menu-${user} .menu-btn`).forEach(btn => btn.classList.remove('active'));
-
-      if (view === 'pending') {
-        document.querySelector(`#menu-${user} .menu-btn:nth-child(1)`).classList.add('active');
-        document.getElementById(`tasks-${user}-pending`).style.display = 'block';
-        renderPendingTasks(user);
-      } else if (view === 'archived') {
-        document.querySelector(`#menu-${user} .menu-btn:nth-child(2)`).classList.add('active');
-        document.getElementById(`tasks-${user}-archived`).style.display = 'block';
-        renderArchivedTasks(user);
-      } else if (view === 'notes') {
-        document.querySelector(`#menu-${user} .menu-btn:nth-child(3)`).classList.add('active');
-        document.getElementById(`notes-${user}`).style.display = 'block';
-        renderNotesHistory(user);
-        document.getElementById(`notes-text-${user}`).value = "";
-      }
-    }
-
-    function showScreen(id) {
-      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-      document.getElementById(id).classList.add('active');
-      if (id === 'main-menu') {
-        updateCounters();
-      } else if (id === 'report-screen') {
-        renderAllReports();
-      }
-    }
-
-    loadData();
-    updateCounters();
-  </script>
+        
+        // Guardar estado cuando se cierre la página
+        window.addEventListener('beforeunload', guardarEstado);
+    </script>
 </body>
 </html>
