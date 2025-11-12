@@ -366,16 +366,23 @@
     </div>
 
     <script>
-        // Tareas fijas de Henry (CERO)
-        const tareasHenry = []; 
-        const mensajeHenry = "En ruta. No tiene tareas operativas asignadas."; 
-
-        // Tareas de Carlos (12 tareas totales - Incluye 'columnas' y 'quiosco de video juegos')
-        const tareasCarlos = [
+        // Tareas fijas de Henry (AHORA CON 8 TAREAS TRANSFERIDAS)
+        const tareasHenry = [
+            // 4 de Carlos
             "Perfileria",
             "TV Wall",
             "Nichos",
             "Quiosco de teléfonos",
+            // 4 de Ammy
+            "Baño",
+            "Comedor",
+            "Site",
+            "Luces"
+        ]; 
+        const mensajeHenry = null; // Henry ahora tiene tareas operativas, el mensaje "En ruta" se elimina.
+
+        // Tareas de Carlos (REDUCIDAS A 8 TAREAS)
+        const tareasCarlos = [
             "Quioscos de uso personal",
             "Quiosco de electrodomésticos",
             "Góndolas",
@@ -386,12 +393,8 @@
             "columnas" 
         ];
 
-        // Tareas de Ammy (15 tareas totales - Incluye 'Pintura gris')
+        // Tareas de Ammy (REDUCIDAS A 11 TAREAS)
         const tareasAmmy = [
-            "Baño",
-            "Comedor",
-            "Site",
-            "Luces",
             "Planta",
             "Techo",
             "Regillas",
@@ -546,7 +549,7 @@
                 emptyMessage.innerHTML = '<span class="task-text" style="color:var(--secondary);">Sin tareas asignadas.</span>';
                 taskList.appendChild(emptyMessage);
             } else {
-                // Carlos y Ammy: Muestran la lista de tareas
+                // Carlos, Ammy y AHORA Henry: Muestran la lista de tareas
                 tareas.forEach(tarea => {
                     const taskItem = document.createElement('li');
                     taskItem.className = 'task-item';
@@ -583,6 +586,7 @@
             const tareasReales = Array.from(checkboxes).filter(cb => {
                 const card = cb.closest('.user-card');
                 const listContent = card.querySelector('.task-list').textContent;
+                // Se ajusta para incluir la lógica de Henry que ahora tiene tareas
                 return !listContent.includes('En ruta') && !listContent.includes('Sin tareas asignadas.');
             });
             
