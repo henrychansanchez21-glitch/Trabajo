@@ -366,22 +366,26 @@
     </div>
 
     <script>
-        // Tareas fijas de Henry (AHORA CON 8 TAREAS TRANSFERIDAS)
-        const tareasHenry = [
-            // 4 de Carlos
+        // Tareas que originalmente eran de Carlos (4) y Ammy (4) y se transfirieron a Henry
+        const tareasTransferidasACarlos = [
             "Perfileria",
             "TV Wall",
             "Nichos",
-            "Quiosco de teléfonos",
-            // 4 de Ammy
+            "Quiosco de teléfonos" 
+        ];
+        
+        const tareasTransferidasAAmmy = [
             "Baño",
             "Comedor",
             "Site",
             "Luces"
         ]; 
-        const mensajeHenry = null; // Henry ahora tiene tareas operativas, el mensaje "En ruta" se elimina.
+        
+        // Tareas fijas de Henry (AHORA VACÍAS y se RESTAURA el mensaje)
+        const tareasHenry = []; 
+        const mensajeHenry = "En ruta"; // Henry vuelve a estar "En ruta" ya que no tiene tareas operativas asignadas.
 
-        // Tareas de Carlos (REDUCIDAS A 8 TAREAS)
+        // Tareas de Carlos (8 TAREAS ORIGINALES + 4 TRANSFERIDAS DE HENRY = 12 TAREAS)
         const tareasCarlos = [
             "Quioscos de uso personal",
             "Quiosco de electrodomésticos",
@@ -390,10 +394,12 @@
             "Archivos", 
             "lienzos Azteca",
             "quiosco de video juegos",
-            "columnas" 
+            "columnas",
+            // Tareas añadidas de Henry:
+            ...tareasTransferidasACarlos 
         ];
 
-        // Tareas de Ammy (REDUCIDAS A 11 TAREAS)
+        // Tareas de Ammy (11 TAREAS ORIGINALES + 4 TRANSFERIDAS DE HENRY = 15 TAREAS)
         const tareasAmmy = [
             "Planta",
             "Techo",
@@ -405,7 +411,9 @@
             "fachada",
             "parqueo",
             "bunker",
-            "Pintura gris" 
+            "Pintura gris", 
+            // Tareas añadidas de Henry:
+            ...tareasTransferidasAAmmy
         ];
         
         // Usuarios fijos
@@ -498,7 +506,11 @@
             
             // 1. Verificar si las listas de tareas en localStorage son obsoletas (por si se añadieron nuevas tareas)
             const savedTasks = localStorage.getItem('taskAssignment');
-            const currentTasks = JSON.stringify(usuarios.map(u => ({ nombre: u.nombre, tareas: obtenerTareasFijas(u.nombre) })));
+            // La comparación debe usar las listas de tareas *completas* (incluyendo las transferidas)
+            const currentTasks = JSON.stringify(usuarios.map(u => ({ 
+                nombre: u.nombre, 
+                tareas: obtenerTareasFijas(u.nombre) 
+            })));
             
             if (savedTasks !== currentTasks) {
                 // Si las listas cambiaron, forzar un reinicio limpio para aplicar las nuevas tareas
@@ -535,8 +547,8 @@
             const taskList = document.createElement('ul');
             taskList.className = 'task-list';
             
-            if (mensajeEstado) {
-                // Henry: Muestra el mensaje de estado
+            if (mensajeEstado && nombre === "Henry") {
+                // Henry: Muestra el mensaje de estado (En ruta)
                 const messageItem = document.createElement('li');
                 messageItem.className = 'route-message';
                 messageItem.innerHTML = `<i class="fas fa-truck-moving"></i> ${mensajeEstado}`;
@@ -549,7 +561,7 @@
                 emptyMessage.innerHTML = '<span class="task-text" style="color:var(--secondary);">Sin tareas asignadas.</span>';
                 taskList.appendChild(emptyMessage);
             } else {
-                // Carlos, Ammy y AHORA Henry: Muestran la lista de tareas
+                // Carlos, Ammy y otros: Muestran la lista de tareas
                 tareas.forEach(tarea => {
                     const taskItem = document.createElement('li');
                     taskItem.className = 'task-item';
@@ -583,11 +595,12 @@
         function actualizarProgreso() {
             const checkboxes = document.querySelectorAll('.task-checkbox');
             
+            // Solo cuenta los checkboxes que están en tarjetas que no tienen el mensaje de "En ruta" (o "Sin tareas asignadas.")
             const tareasReales = Array.from(checkboxes).filter(cb => {
                 const card = cb.closest('.user-card');
-                const listContent = card.querySelector('.task-list').textContent;
-                // Se ajusta para incluir la lógica de Henry que ahora tiene tareas
-                return !listContent.includes('En ruta') && !listContent.includes('Sin tareas asignadas.');
+                const listContent = card.querySelector('.task-list').innerHTML;
+                // Excluir tarjetas que solo tienen el mensaje de estado (como Henry sin tareas)
+                return !listContent.includes('route-message') && !listContent.includes('Sin tareas asignadas.');
             });
             
             const totalTareas = tareasReales.length;
