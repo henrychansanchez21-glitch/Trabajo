@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Asignación</title>
+    <title>Panel de Asignación - Firebase RTDB Sync</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Variables y Reseteo: Estilo Minimalista y Profesional */
@@ -308,7 +308,7 @@
             }
         }
 
-        /* Notificación de guardado RESTAURADA */
+        /* Notificación de guardado */
         .save-notification {
             position: fixed;
             bottom: 30px;
@@ -357,7 +357,7 @@
         </div>
         
         <footer>
-            <p>©MrHenryYT</p>
+            <p>©MrHenryYT (Sincronizado con Firebase RTDB)</p>
         </footer>
     </div>
 
@@ -365,7 +365,32 @@
         <i class="fas fa-check-circle"></i> Sincronización de Datos Exitosa
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
     <script>
+        
+        // 2. CONFIGURACIÓN E INICIALIZACIÓN DE TU PROYECTO
+        // *************************************************************************
+        // *** CREDENCIALES AÑADIDAS POR EL USUARIO ***
+        // *************************************************************************
+        const firebaseConfig = {
+            apiKey: "AIzaSyBcdWMdR_xVCFFQQPcTGPhbw8DYykN4qUg", 
+            authDomain: "app-de-tareas-80324.firebaseapp.com",
+            projectId: "app-de-tareas-80324",
+            storageBucket: "app-de-tareas-80324.firebasestorage.app",
+            messagingSenderId: "166776767275",
+            appId: "1:166776767275:web:a581ec25fc4c05063f3b6e",
+            databaseURL: "https://app-de-tareas-80324-default-rtdb.firebaseio.com"
+        };
+
+        // Inicializar Firebase y Realtime Database
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = app.database();
+        // Definir la Referencia del Documento: El nodo principal donde se guardará el estado.
+        const SYNC_REF = database.ref('estado_global');
+
+
         // Tareas que originalmente eran de Carlos (4) y Ammy (4) y se transfirieron a Henry
         const tareasTransferidasACarlos = [
             "Perfileria",
@@ -445,8 +470,8 @@
             return null;
         }
 
-        // Función para guardar el estado en localStorage (RESTAURADA)
-        function guardarEstado() {
+        // 3. FUNCIÓN PARA GUARDAR ESTADO EN REALTIME DATABASE
+        async function guardarEstado() {
             const estado = {};
             document.querySelectorAll('.user-card').forEach((card) => {
                 const userNombre = card.querySelector('.user-name').textContent;
@@ -459,42 +484,75 @@
                 });
             });
             
-            localStorage.setItem('taskAssignmentState', JSON.stringify(estado));
-            
-            // Mostrar notificación de guardado (RESTAURADA)
+            // Reemplazamos localStorage con SYNC_REF.set para guardar en la nube
+            try {
+                await SYNC_REF.set({ 
+                    taskAssignmentState: estado,
+                    lastUpdated: new Date().toISOString()
+                });
+                mostrarNotificacion("Sincronización de Datos Exitosa");
+            } catch (error) {
+                console.error("Error al guardar estado en Firebase RTDB:", error);
+                mostrarNotificacion("ERROR al sincronizar datos", true);
+            }
+        }
+        
+        // 4. FUNCIÓN PARA CARGAR ESTADO DESDE REALTIME DATABASE
+        async function cargarEstado() {
+             try {
+                // Usamos once('value') para obtener los datos una sola vez
+                const snapshot = await SYNC_REF.once('value');
+                
+                if (!snapshot.exists()) {
+                    console.log("No existe estado guardado en Firebase RTDB. Usando estado inicial.");
+                    return; 
+                }
+                
+                const data = snapshot.val();
+                const estado = data.taskAssignmentState;
+                
+                document.querySelectorAll('.user-card').forEach(card => {
+                    const userNombre = card.querySelector('.user-name').textContent;
+                    if (estado && estado[userNombre]) {
+                        card.querySelectorAll('.task-item').forEach((item, index) => {
+                            const checkbox = item.querySelector('.task-checkbox');
+                            if (checkbox) {
+                                 // Asegurar que solo marcamos si el estado guardado tiene una entrada y es 'true'
+                                 if (index < estado[userNombre].length && estado[userNombre][index] === true) {
+                                    checkbox.checked = true;
+                                } else {
+                                     checkbox.checked = false; 
+                                }
+                            }
+                        });
+                    }
+                });
+                
+                actualizarProgreso();
+                mostrarNotificacion("Datos cargados desde Firebase RTDB");
+
+            } catch (error) {
+                console.error("Error al cargar estado desde Firebase RTDB:", error);
+                mostrarNotificacion("ERROR al cargar datos. Usando estado inicial.", true);
+            }
+        }
+        
+        // FUNCIÓN DE NOTIFICACIÓN AJUSTADA
+        function mostrarNotificacion(message, isError = false) {
             const notification = document.getElementById('save-notification');
+            notification.textContent = message;
+            
+            // Cambiar color para errores
+            notification.style.background = isError ? '#c0392b' : 'var(--secondary)';
+            
             notification.classList.add('show');
             setTimeout(() => {
                 notification.classList.remove('show');
-            }, 2000);
+            }, 3000);
         }
-        
-        // Función para cargar el estado desde localStorage (RESTAURADA)
-        function cargarEstado() {
-            const estadoGuardado = localStorage.getItem('taskAssignmentState');
-            if (!estadoGuardado) return;
-            
-            const estado = JSON.parse(estadoGuardado);
-            
-            document.querySelectorAll('.user-card').forEach(card => {
-                const userNombre = card.querySelector('.user-name').textContent;
-                if (estado[userNombre]) {
-                    card.querySelectorAll('.task-item').forEach((item, index) => {
-                        const checkbox = item.querySelector('.task-checkbox');
-                        if (checkbox) {
-                             if (index < estado[userNombre].length && estado[userNombre][index]) {
-                                checkbox.checked = true;
-                            }
-                        }
-                    });
-                }
-            });
-            
-            actualizarProgreso();
-        }
-        
-        // Función para crear la asignación de tareas (ajustada para usar localStorage)
-        function crearAsignacionTareas() {
+
+        // Función para crear la asignación de tareas (ajustada para usar RTDB)
+        async function crearAsignacionTareas() {
             const usuariosContainer = document.getElementById('users-container');
             usuariosContainer.innerHTML = '';
             
@@ -504,22 +562,8 @@
                 crearTarjetaUsuario(usuario.nombre, tareasUsuario);
             });
             
-            // 1. Verificar si las listas de tareas en localStorage son obsoletas (por si se añadieron nuevas tareas)
-            const savedTasks = localStorage.getItem('taskAssignment');
-            // La comparación debe usar las listas de tareas *completas* (incluyendo las transferidas)
-            const currentTasks = JSON.stringify(usuarios.map(u => ({ 
-                nombre: u.nombre, 
-                tareas: obtenerTareasFijas(u.nombre) 
-            })));
-            
-            if (savedTasks !== currentTasks) {
-                // Si las listas cambiaron, forzar un reinicio limpio para aplicar las nuevas tareas
-                localStorage.removeItem('taskAssignmentState');
-                localStorage.setItem('taskAssignment', currentTasks);
-            }
-            
-            // 2. Cargar el estado guardado (si existe)
-            cargarEstado();
+            // 2. Cargar el estado guardado de Firebase
+            await cargarEstado(); 
         }
 
         // Función auxiliar para crear una tarjeta de usuario
@@ -570,7 +614,7 @@
                     taskCheckbox.type = 'checkbox';
                     taskCheckbox.className = 'task-checkbox';
                     
-                    // Event listener para actualizar progreso Y guardar estado (RESTAURADO)
+                    // Event listener para actualizar progreso Y guardar estado (usando la nueva función RTDB)
                     taskCheckbox.addEventListener('change', function() {
                         actualizarProgreso();
                         guardarEstado(); 
@@ -621,11 +665,21 @@
         window.addEventListener('DOMContentLoaded', () => {
             crearAsignacionTareas();
             
-            // Guardar estado automáticamente cada 30 segundos (RESTAURADO)
+            // Guardar estado automáticamente cada 30 segundos (Ahora guarda en Firebase)
             setInterval(guardarEstado, 30000);
+            
+            // BONUS: Escucha en tiempo real (si las reglas de Firebase lo permiten)
+            SYNC_REF.on('value', (snapshot) => {
+                 // Previene la carga doble si se acaba de cargar.
+                 if (document.readyState === 'complete') {
+                     console.log("Cambios en Firebase detectados. Recargando estado.");
+                     // Si los datos cambian en la nube (por otro usuario), recarga la UI
+                     cargarEstado(); 
+                 }
+            });
         });
         
-        // Guardar estado cuando se cierre la página (RESTAURADO)
+        // Guardar estado cuando se cierre la página (Ahora guarda en Firebase)
         window.addEventListener('beforeunload', guardarEstado);
     </script>
 </body>
