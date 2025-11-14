@@ -77,10 +77,9 @@
             opacity: 0.9;
             font-weight: 400; 
             color: var(--dark);
-            margin-bottom: 10px; /* Espacio para el nuevo texto de fecha/hora */
+            margin-bottom: 10px;
         }
 
-        /* ESTILO NUEVO PARA LA FECHA/HORA */
         .sync-time {
             font-size: 0.9rem;
             font-weight: 500;
@@ -264,6 +263,23 @@
             font-weight: 400;
         }
 
+        /* ESTILO PARA EL BOTÓN DE ELIMINAR INLINE */
+        .delete-task-btn {
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 1.1rem;
+            opacity: 0.6;
+            transition: var(--transition);
+            margin-left: 10px;
+            padding: 5px;
+        }
+
+        .delete-task-btn:hover {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+        /* FIN ESTILO PARA EL BOTÓN DE ELIMINAR INLINE */
+
         .route-message {
             text-align: center;
             padding: 18px 0;
@@ -392,6 +408,7 @@
         
         .action-buttons {
             display: flex;
+            flex-wrap: wrap;
             justify-content: center;
             gap: 15px;
             margin-top: 20px;
@@ -407,6 +424,8 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            min-width: 150px;
+            justify-content: center;
         }
         
         .btn-primary {
@@ -416,6 +435,11 @@
         
         .btn-secondary {
             background: var(--secondary);
+            color: white;
+        }
+
+        .btn-delete {
+            background: var(--accent);
             color: white;
         }
         
@@ -443,7 +467,7 @@
     
     <div class="container">
         <header>
-            <h1><i class="fas fa-tasks"></i> PANEL DE TAREAS</h1>
+            <h1><i class="fas fa-tasks"></i> PANEL DE TAREAS GCC</h1>
             <p class="subtitle">Gestión de Tareas Clave - Distribución Equilibrada</p>
             <div class="sync-time" id="current-datetime"></div>
         </header>
@@ -466,9 +490,12 @@
             
             <div class="action-buttons">
                 <button class="btn btn-primary" id="reset-btn">
-                    <i class="fas fa-undo"></i> Reiniciar Tareas
+                    <i class="fas fa-undo"></i> Reiniciar Tareas Completadas
                 </button>
-                <button class="btn btn-secondary" id="celebrate-btn">
+                <button class="btn btn-secondary" id="add-task-btn"> 
+                    <i class="fas fa-plus"></i> ❌No tocar❌
+                </button>
+                <button class="btn btn-delete" id="celebrate-btn">
                     <i class="fas fa-fireworks"></i> ¡Celebrar!
                 </button>
             </div>
@@ -500,7 +527,10 @@
         const app = firebase.initializeApp(firebaseConfig);
         const database = app.database();
         const SYNC_REF = database.ref('estado_global');
+        
+        let isSyncingFromFirebase = false; 
 
+        // --- TAREAS MODIFICABLES ---
         const tareasTransferidasDeAmmy = [
             "Baño",
             "Comedor", 
@@ -510,42 +540,33 @@
         
         const tareasTransferidasDeCarlos = [
             "Perfileria",
-            "TV Wall",
-            "Nichos",
-            "Quiosco de teléfonos"
+            "Mueble de gerente",
+            "Puntos de Red",
+            "Computadoras"
         ];
         
-        const tareasHenry = [
+        let tareasHenry = [
             ...tareasTransferidasDeAmmy,
             ...tareasTransferidasDeCarlos
         ];
         
-        const tareasCarlos = [
-            "Quioscos de uso personal",
-            "Quiosco de electrodomésticos",
-            "Góndolas",
-            "escritorios de atención al cliente",
+        let tareasCarlos = [
+            "Lokers",
             "Archivos", 
-            "lienzos Azteca",
-            "quiosco de video juegos",
-            "columnas"
+            "luz emergencia",
+            "Luz corredor",
+            "columnas", 
+            "Bodega de motos",
         ];
 
-        // Tarea "Bomba" añadida a Ammy
-        const tareasAmmy = [
-            "Planta",
+        let tareasAmmy = [
             "Techo",
-            "Regillas",
-            "Tinacos",
-            "Luz de corredor",
-            "góndolas",
-            "bodega",
             "fachada",
             "parqueo",
-            "bunker",
-            "Pacios", 
             "Pintura gris",
-            "Bomba" // NUEVA TAREA AÑADIDA
+            "Pacios",
+            "Lienzo Azteca", 
+            "Pintura General",
         ];
         
         const usuarios = [
@@ -554,7 +575,8 @@
             { nombre: "Ammy", tareas: tareasAmmy.length } 
         ];
         
-        function obtenerTareasFijas(nombreUsuario) {
+        // Función auxiliar para obtener el array modificable
+        function obtenerArrayTareas(nombreUsuario) {
             if (nombreUsuario === "Henry") return tareasHenry;
             if (nombreUsuario === "Carlos") return tareasCarlos;
             if (nombreUsuario === "Ammy") return tareasAmmy;
@@ -565,8 +587,14 @@
             if (nombreUsuario === "Henry") return "Ahora con tareas asignadas";
             return null;
         }
+        // --- FIN TAREAS MODIFICABLES ---
 
+        // --- FUNCIONES DE FIREBASE Y SINCRONIZACIÓN ---
         async function guardarEstado() {
+            if (isSyncingFromFirebase) {
+                return;
+            }
+            
             const estado = {};
             document.querySelectorAll('.user-card').forEach((card) => {
                 const userNombre = card.querySelector('.user-name').textContent;
@@ -575,7 +603,9 @@
                 card.querySelectorAll('.task-item').forEach((item) => {
                     const checkbox = item.querySelector('.task-checkbox');
                     const completada = checkbox ? checkbox.checked : false; 
-                    estado[userNombre].push(completada);
+                    if (checkbox) {
+                        estado[userNombre].push(completada);
+                    }
                 });
             });
             
@@ -585,7 +615,7 @@
                     lastUpdated: new Date().toISOString()
                 });
                 mostrarNotificacion("Sincronización de Datos Exitosa");
-                mostrarFechaYHora(); // Actualiza la hora al guardar
+                mostrarFechaYHora();
             } catch (error) {
                 console.error("Error al guardar estado en Firebase RTDB:", error);
                 mostrarNotificacion("ERROR al sincronizar datos", true);
@@ -593,10 +623,15 @@
         }
         
         async function cargarEstado() {
+            isSyncingFromFirebase = true; 
+            
              try {
                 const snapshot = await SYNC_REF.once('value');
                 
-                if (!snapshot.exists()) return; 
+                if (!snapshot.exists()) {
+                    isSyncingFromFirebase = false;
+                    return; 
+                }
                 
                 const data = snapshot.val();
                 const estado = data.taskAssignmentState;
@@ -607,11 +642,25 @@
                         card.querySelectorAll('.task-item').forEach((item, index) => {
                             const checkbox = item.querySelector('.task-checkbox');
                             if (checkbox) {
-                                 if (index < estado[userNombre].length && estado[userNombre][index] === true) {
-                                    checkbox.checked = true;
-                                } else {
-                                     checkbox.checked = false; 
-                                }
+                                 // Aplica el estado guardado si el índice existe en el array guardado
+                                 const isChecked = index < estado[userNombre].length && estado[userNombre][index] === true;
+                                 checkbox.checked = isChecked;
+                                 
+                                 // Actualización visual manual (evita el bucle)
+                                 const taskText = item.querySelector('.task-text');
+                                 if (isChecked) {
+                                    item.style.backgroundColor = 'rgba(0, 168, 150, 0.05)';
+                                    if (taskText) {
+                                        taskText.style.textDecoration = 'line-through';
+                                        taskText.style.opacity = '0.7';
+                                    }
+                                 } else {
+                                     item.style.backgroundColor = '';
+                                     if (taskText) {
+                                        taskText.style.textDecoration = 'none';
+                                        taskText.style.opacity = '1';
+                                     }
+                                 }
                             }
                         });
                     }
@@ -619,11 +668,13 @@
                 
                 actualizarProgreso();
                 mostrarNotificacion("Datos cargados desde Firebase RTDB");
-                mostrarFechaYHora(); // Actualiza la hora al cargar
+                mostrarFechaYHora();
 
             } catch (error) {
                 console.error("Error al cargar estado desde Firebase RTDB:", error);
                 mostrarNotificacion("ERROR al cargar datos. Usando estado inicial.", true);
+            } finally {
+                isSyncingFromFirebase = false; 
             }
         }
         
@@ -636,8 +687,7 @@
                 notification.classList.remove('show');
             }, 3000);
         }
-
-        // NUEVA FUNCIÓN PARA MOSTRAR FECHA Y HORA
+        
         function mostrarFechaYHora() {
             const now = new Date();
             const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -648,17 +698,29 @@
             const datetimeElement = document.getElementById('current-datetime');
             datetimeElement.innerHTML = `<i class="far fa-clock"></i> Última Actualización Local: **${formattedDate}** a las **${formattedTime}**`;
         }
+        // --- FIN FUNCIONES DE FIREBASE Y SINCRONIZACIÓN ---
 
-        async function crearAsignacionTareas() {
+        // --- FUNCIONES DE UI Y LÓGICA DE TAREAS ---
+        
+        async function crearAsignacionTareas(cargarEstadoFirebase = true) {
             const usuariosContainer = document.getElementById('users-container');
             usuariosContainer.innerHTML = '';
             
             usuarios.forEach(usuario => {
-                const tareasUsuario = obtenerTareasFijas(usuario.nombre);
+                const tareasUsuario = obtenerArrayTareas(usuario.nombre);
+                const usuarioData = usuarios.find(u => u.nombre === usuario.nombre);
+                if (usuarioData) {
+                    usuarioData.tareas = tareasUsuario.length;
+                }
                 crearTarjetaUsuario(usuario.nombre, tareasUsuario);
             });
             
-            await cargarEstado(); 
+            if (cargarEstadoFirebase) {
+                await cargarEstado(); 
+            } else {
+                actualizarProgreso();
+                guardarEstado(); 
+            }
         }
 
         function crearTarjetaUsuario(nombre, tareas) {
@@ -712,18 +774,28 @@
                     taskCheckbox.type = 'checkbox';
                     taskCheckbox.className = 'task-checkbox';
                     
+                    // Listener para los cambios de completado
                     taskCheckbox.addEventListener('change', function() {
                         actualizarProgreso();
-                        guardarEstado();
+                        guardarEstado(); 
                         
+                         const taskText = taskItem.querySelector('.task-text');
                         if (this.checked) {
                             taskItem.style.backgroundColor = 'rgba(0, 168, 150, 0.05)';
+                            if (taskText) {
+                                taskText.style.textDecoration = 'line-through';
+                                taskText.style.opacity = '0.7';
+                            }
                             const porcentaje = calcularPorcentajeProgreso();
                             if (porcentaje === 100) {
                                 crearConfeti();
                             }
                         } else {
                             taskItem.style.backgroundColor = '';
+                            if (taskText) {
+                                taskText.style.textDecoration = 'none';
+                                taskText.style.opacity = '1';
+                            }
                         }
                     });
                     
@@ -733,11 +805,22 @@
                     
                     taskText.addEventListener('click', function() {
                         taskCheckbox.checked = !taskCheckbox.checked;
-                        taskCheckbox.dispatchEvent(new Event('change'));
+                        taskCheckbox.dispatchEvent(new Event('change')); 
+                    });
+
+                    // ÍCONO DE ELIMINAR INLINE
+                    const deleteIcon = document.createElement('i');
+                    deleteIcon.className = 'fas fa-trash-alt delete-task-btn';
+                    deleteIcon.title = `Eliminar la tarea '${tarea}'`;
+
+                    deleteIcon.addEventListener('click', function() {
+                        // Llamar a la nueva función de eliminación con los datos de la tarea
+                        eliminarTareaDinamica(nombre, tarea);
                     });
                     
                     taskItem.appendChild(taskCheckbox);
                     taskItem.appendChild(taskText);
+                    taskItem.appendChild(deleteIcon); // Añade el ícono al final del item
                     taskList.appendChild(taskItem);
                 });
             }
@@ -746,6 +829,71 @@
             userCard.appendChild(taskList);
             usuariosContainer.appendChild(userCard);
         }
+        
+        function agregarTareaDinamica() {
+            const tarea = prompt("Ingresa la nueva tarea a asignar:");
+            if (!tarea) {
+                mostrarNotificacion("Operación cancelada.");
+                return;
+            }
+
+            let usuarioAsignado;
+            let validUsers = ['henry', 'carlos', 'ammy'];
+
+            do {
+                usuarioAsignado = prompt("¿A quién se asigna esta tarea? (Henry, Carlos o Ammy)").toLowerCase();
+                if (usuarioAsignado === null || !usuarioAsignado) {
+                    mostrarNotificacion("Operación cancelada.");
+                    return; 
+                }
+            } while (!validUsers.includes(usuarioAsignado));
+
+            const userName = usuarioAsignado.charAt(0).toUpperCase() + usuarioAsignado.slice(1);
+            let targetArray = obtenerArrayTareas(userName);
+            
+            if (targetArray) {
+                targetArray.push(tarea);
+                
+                // 1. Re-renderiza la UI con la nueva lista
+                crearAsignacionTareas(true); 
+                
+                // 2. Guarda el nuevo estado de tarea
+                guardarEstado();
+
+                mostrarNotificacion(`Tarea '${tarea}' añadida a ${userName}.`);
+            }
+        }
+
+        // --- FUNCIÓN DE ELIMINACIÓN MODIFICADA PARA ACEPTAR ARGUMENTOS ---
+        function eliminarTareaDinamica(userName, tareaAEliminar) {
+            
+            // 1. Confirmación de seguridad
+            if (!confirm(`¿Estás seguro de que quieres eliminar la tarea: "${tareaAEliminar}" de la lista de ${userName}?`)) {
+                mostrarNotificacion("Eliminación cancelada.");
+                return;
+            }
+            
+            let targetArray = obtenerArrayTareas(userName);
+            
+            const tareaIndex = targetArray.indexOf(tareaAEliminar);
+            
+            if (tareaIndex > -1) {
+                // Elimina la tarea del array de tareas
+                targetArray.splice(tareaIndex, 1);
+                
+                // 1. Re-renderiza la UI (la lista se vuelve a dibujar más corta)
+                crearAsignacionTareas(true); 
+                
+                // 2. Guarda el nuevo estado (con el array más corto), respetando el estado de completado de las restantes.
+                guardarEstado();
+
+                mostrarNotificacion(`Tarea '${tareaAEliminar}' eliminada de ${userName}.`);
+            } else {
+                // Esto no debería suceder si se llama correctamente desde el ícono.
+                mostrarNotificacion(`Error: La tarea no pudo ser encontrada para eliminación.`, true);
+            }
+        }
+        // --- FIN FUNCIÓN DE ELIMINACIÓN MODIFICADA ---
         
         function calcularPorcentajeProgreso() {
             const checkboxes = document.querySelectorAll('.task-checkbox');
@@ -783,7 +931,7 @@
             document.getElementById('progress-text').textContent = 
                 `${tareasCompletadas} de ${totalTareas} tareas completadas (${porcentaje}%)`;
 
-            mostrarFechaYHora(); // Actualiza la hora al actualizar el progreso
+            mostrarFechaYHora();
         }
         
         function crearConfeti() {
@@ -803,10 +951,13 @@
                 }, 5000);
             }
         }
+        // --- FIN FUNCIONES DE UI Y LÓGICA DE TAREAS ---
         
+        
+        // --- EVENTOS PRINCIPALES ---
         window.addEventListener('DOMContentLoaded', () => {
-            crearAsignacionTareas();
-            mostrarFechaYHora(); // Muestra la hora al cargar la página
+            crearAsignacionTareas(true); 
+            mostrarFechaYHora(); 
             
             document.getElementById('reset-btn').addEventListener('click', function() {
                 document.querySelectorAll('.task-checkbox').forEach(checkbox => {
@@ -814,9 +965,13 @@
                 });
                 actualizarProgreso();
                 guardarEstado();
-                mostrarNotificacion("Tareas reiniciadas");
+                mostrarNotificacion("Tareas completadas reiniciadas");
             });
             
+            // Evento para añadir tareas
+            document.getElementById('add-task-btn').addEventListener('click', agregarTareaDinamica);
+            
+            // Evento para Celebrar
             document.getElementById('celebrate-btn').addEventListener('click', function() {
                 crearConfeti();
                 mostrarNotificacion("¡Celebrando el progreso!");
