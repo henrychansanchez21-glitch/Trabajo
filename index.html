@@ -3,317 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Asignación - Firebase RTDB Sync</title>
+    <title>Panel de Asignación - Simple & Colorido</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* Paleta de Color Simplificada y Vibrante */
+        :root {
+            --primary: #3b5998; /* Azul Social */
+            --secondary: #00bcd4; /* Cian Brillante */
+            --accent: #ff9800; /* Naranja Energético */
+            --complete: #4caf50; /* Verde Éxito */
+            --text-dark: #212121;
+            --text-light: #757575;
+            --bg-light: #f4f6f9; /* Fondo muy claro */
+            --card-bg: #ffffff;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1); /* Sombra muy simple */
+        }
+        
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        :root {
-            --primary: #004d7a;
-            --secondary: #00a896;
-            --accent: #ff6b6b;
-            --dark: #2c3e50;
-            --light-bg: #f5f7fa;
-            --card-bg: #ffffff;
-            --shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
-            --shadow-hover: 0 8px 15px rgba(0, 0, 0, 0.12);
-            --transition: all 0.3s cubic-bezier(0.2, 0.8, 0.4, 1);
+            font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
         body {
-            background: linear-gradient(135deg, var(--light-bg) 0%, #e0eafc 100%);
-            color: var(--dark);
-            line-height: 1.6;
-            padding: 30px;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.5;
+            padding: 20px;
             min-height: 100vh;
-            overflow-x: hidden;
         }
         
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
         }
         
+        /* --- HEADER --- */
         header {
             text-align: center;
-            margin-bottom: 50px;
-            padding: 40px 20px;
+            margin-bottom: 30px;
+            padding: 25px 20px;
             background: var(--card-bg);
-            border-radius: 15px;
+            border-radius: 10px;
             box-shadow: var(--shadow);
-            border-top: 5px solid var(--primary);
-            transition: var(--transition);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
-            z-index: 1;
         }
         
         h1 {
-            font-size: 2.0rem; 
+            font-size: 1.8rem; 
             margin-bottom: 5px;
-            font-weight: 800; 
-            background: linear-gradient(45deg, #0077b6, #00b4d8); 
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); 
-            transition: all 0.5s ease-in-out; 
-        }
-
-        header:hover h1 {
-            transform: scale(1.02); 
-            opacity: 0.95;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); 
+            font-weight: 700; 
+            color: var(--primary); /* Título en el color primario */
         }
         
         .subtitle {
-            font-size: 1.1rem;
-            opacity: 0.9;
-            font-weight: 400; 
-            color: var(--dark);
-            margin-bottom: 10px;
+            font-size: 0.95rem;
+            color: var(--text-light);
+            margin-bottom: 15px;
         }
 
         .sync-time {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             font-weight: 500;
             color: var(--secondary);
-            opacity: 0.8;
-            display: block;
-            margin-top: 10px;
+            opacity: 0.9;
         }
         
+        /* --- CARDS DE USUARIOS --- */
         .users-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 30px;
-            margin-bottom: 50px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
         }
         
         .user-card {
             background: var(--card-bg);
-            border-radius: 12px;
+            border-radius: 8px;
             box-shadow: var(--shadow);
-            padding: 35px;
-            transition: var(--transition);
-            position: relative;
-            transform: translateY(0);
-            opacity: 0;
-            animation: cardFadeIn 0.8s forwards;
-            border-left: 5px solid var(--secondary);
-            overflow: hidden;
-        }
-        
-        .user-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform 0.5s ease;
-        }
-        
-        .user-card:hover::before {
-            transform: scaleX(1);
+            padding: 25px;
+            border-top: 5px solid var(--secondary); /* Borde de color simple */
+            transition: transform 0.2s;
         }
         
         .user-card:hover {
-            transform: translateY(-5px); 
-            box-shadow: var(--shadow-hover);
+            transform: translateY(-3px); 
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        
-        @keyframes cardFadeIn {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .user-card:nth-child(1) { animation-delay: 0.1s; }
-        .user-card:nth-child(2) { animation-delay: 0.2s; }
-        .user-card:nth-child(3) { animation-delay: 0.3s; }
         
         .user-header {
             display: flex;
             align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
         
         .user-avatar {
-            width: 55px;
-            height: 55px;
+            width: 45px;
+            height: 45px;
             border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background: var(--primary); /* Avatar en el color primario */
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: bold;
-            margin-right: 15px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            transition: var(--transition);
-        }
-        
-        .user-card:hover .user-avatar {
-            transform: scale(1.05);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+            margin-right: 10px;
         }
         
         .user-name {
-            font-size: 1.7rem;
+            font-size: 1.5rem;
             font-weight: 600;
-            color: var(--dark);
+            color: var(--text-dark);
         }
         
         .task-counter {
             margin-left: auto;
-            background: var(--light-bg);
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.9rem;
+            background: var(--bg-light);
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
             font-weight: 600;
             color: var(--primary);
         }
         
         .task-list {
             list-style-type: none;
-            max-height: 400px;
+            max-height: 350px;
             overflow-y: auto;
-            padding-right: 10px;
         }
-        
-        .task-list::-webkit-scrollbar { width: 6px; }
-        .task-list::-webkit-scrollbar-track { background: var(--light-bg); border-radius: 10px; }
-        .task-list::-webkit-scrollbar-thumb { background: rgba(0, 168, 150, 0.4); border-radius: 10px; }
-        .task-list::-webkit-scrollbar-thumb:hover { background: var(--secondary); }
         
         .task-item {
             display: flex;
             align-items: center;
-            padding: 15px 15px; 
-            margin-bottom: 10px; 
-            border-radius: 8px; 
-            border: 1px solid rgba(0, 0, 0, 0.05);
-            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.4, 1);
-            position: relative;
-            overflow: hidden;
-            background-color: var(--card-bg); 
-        }
-
-        .task-item::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 5px;
-            background-color: var(--primary); 
-            border-radius: 8px 0 0 8px;
-            transition: width 0.3s, background-color 0.3s, opacity 0.3s;
-        }
-
-        .task-item:hover {
-            transform: translateY(-2px); 
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); 
-            background-color: var(--light-bg);
+            padding: 10px 0; 
+            margin-bottom: 5px; 
+            border-bottom: 1px dashed rgba(0, 0, 0, 0.05); /* Separador sutil */
+            transition: background-color 0.2s;
         }
         
+        .task-item:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
         .task-item.task-completed {
-            background-color: #e6f7f5; 
-            border-color: rgba(0, 168, 150, 0.3);
+            background-color: rgba(76, 175, 80, 0.05); /* Fondo verde muy tenue */
             opacity: 0.9;
         }
         
-        .task-item.task-completed::before {
-            background-color: var(--secondary); 
-            width: 100%; 
-            opacity: 0.1; 
-        }
-
-        .task-item.task-completed:hover {
-             transform: translateY(-2px);
-             box-shadow: 0 5px 15px rgba(0, 168, 150, 0.2); 
-        }
-
-        .task-item:last-child { margin-bottom: 0; }
+        .task-item:last-child { border-bottom: none; margin-bottom: 0; }
         
         .task-text-container {
             flex: 1;
             display: flex; 
             flex-direction: column; 
-            transition: var(--transition);
             cursor: pointer;
-            line-height: 1.3;
+            line-height: 1.2;
         }
 
         .task-title {
-            font-size: 1rem;
-            color: var(--dark);
+            font-size: 0.95rem;
+            color: var(--text-dark);
             font-weight: 500; 
-            transition: color 0.3s;
         }
 
         .task-subtext {
-            font-size: 0.8rem;
-            color: #95a5a6; /* Gris claro/plateado */
+            font-size: 0.75rem;
+            color: var(--text-light);
             font-weight: 400; 
             margin-top: 2px;
-            transition: color 0.3s;
         }
 
         .task-item.task-completed .task-title {
             text-decoration: line-through;
-            color: var(--secondary);
-            opacity: 0.7;
+            color: var(--complete);
+            opacity: 0.8;
             font-weight: 400;
         }
         
         .task-item.task-completed .task-subtext {
-            color: #bdc3c7; /* Aún más claro/atenuado cuando está completado */
-            text-decoration: none; 
+            color: #b0bec5; /* Gris muy claro */
         }
-
+        
+        /* CHECKBOX SIMPLE Y COLORIDO */
         .task-checkbox {
             margin-right: 15px;
-            width: 24px; 
-            height: 24px;
+            width: 20px; 
+            height: 20px;
             cursor: pointer;
             position: relative;
             appearance: none;
-            border: 3px solid var(--primary); 
-            border-radius: 50%; 
-            transition: all 0.3s ease-in-out; 
+            border: 2px solid var(--primary); 
+            border-radius: 4px; 
+            transition: all 0.2s ease-in-out; 
             flex-shrink: 0;
             background-color: var(--card-bg); 
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); 
         }
         
         .task-checkbox:checked {
-            background: linear-gradient(135deg, var(--secondary), var(--primary)); 
-            border-color: var(--secondary); 
-            transform: scale(1.1); 
-            box-shadow: 0 4px 10px rgba(0, 168, 150, 0.5), inset 0 0 0 3px var(--card-bg); 
+            background-color: var(--complete); 
+            border-color: var(--complete); 
+            transform: scale(1.05); 
         }
         
         .task-checkbox:checked::after {
@@ -325,127 +217,108 @@
             left: 50%;
             transform: translate(-50%, -50%);
             color: white; 
-            font-size: 14px; 
-            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            font-size: 12px; 
         }
         
         .delete-task-btn {
             color: var(--accent);
             cursor: pointer;
-            font-size: 1.1rem;
-            opacity: 0.6;
-            transition: var(--transition);
+            font-size: 0.9rem;
+            opacity: 0.7;
+            transition: color 0.2s, transform 0.2s;
             margin-left: 10px;
             padding: 5px;
         }
 
         .delete-task-btn:hover {
+            color: #d32f2f; /* Rojo más fuerte */
             opacity: 1;
-            transform: scale(1.2);
+            transform: scale(1.1);
         }
 
+        /* --- ESTADÍSTICAS --- */
         .stats {
-            margin-top: 35px;
+            margin-top: 20px;
             text-align: center;
             background: var(--card-bg);
-            padding: 30px;
-            border-radius: 12px;
+            padding: 25px;
+            border-radius: 8px;
             box-shadow: var(--shadow);
-            border-top: 5px solid var(--primary);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .stats::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+            border-top: 5px solid var(--accent);
         }
         
         .stats h3 {
-            margin-bottom: 20px;
-            color: var(--dark);
-            font-size: 1.6rem;
+            margin-bottom: 15px;
+            color: var(--text-dark);
+            font-size: 1.4rem;
             font-weight: 600;
         }
         
-        .progress-container {
-            position: relative;
-            margin: 20px 0;
-        }
-        
         .progress-bar {
-            height: 15px; 
-            background-color: rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
+            height: 12px; 
+            background-color: #e0e0e0;
+            border-radius: 6px;
             overflow: hidden;
         }
         
         .progress {
             height: 100%;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-            border-radius: 8px;
-            transition: width 0.7s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-            position: relative;
-        }
-
-        .progress::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            width: 10px;
-            background: rgba(255, 255, 255, 0.3);
-            transform: skewX(-10deg);
+            background-color: var(--secondary); /* Color secundario como progreso */
+            border-radius: 6px;
+            transition: width 0.5s ease-out;
         }
         
         .progress-info {
             display: flex;
             justify-content: space-between;
-            margin-top: 10px;
-            font-weight: 600;
-            color: var(--dark);
-            font-size: 0.95rem;
-        }
-        
-        footer {
-            text-align: center;
-            margin-top: 50px;
-            color: var(--secondary);
+            margin-top: 8px;
+            font-weight: 500;
+            color: var(--text-light);
             font-size: 0.9rem;
-            padding: 15px;
-            opacity: 0.7;
         }
         
-        @media (max-width: 768px) {
-            .users-container {
-                grid-template-columns: 1fr;
-            }
-            
-            h1 {
-                font-size: 2.2rem;
-            }
+        /* --- BOTONES DE ACCIÓN --- */
+        .action-buttons {
+            display: flex;
+            justify-content: center; 
+            gap: 10px;
+            margin-top: 20px;
         }
-
+        
+        .btn {
+            width: 45px; 
+            height: 45px;
+            border-radius: 50%; 
+            font-size: 1.1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:hover {
+            background-color: #5c74a8; /* Un poco más claro */
+            transform: translateY(-1px);
+        }
+        
+        /* --- NOTIFICACIÓN --- */
         .save-notification {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: var(--secondary); 
+            bottom: 20px;
+            right: 20px;
+            background: var(--complete); 
             color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
-            transform: translateY(120px);
+            padding: 10px 15px;
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            transform: translateY(100px);
             opacity: 0;
-            transition: transform 0.4s ease-out, opacity 0.4s ease-out;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
             z-index: 1000;
             font-weight: 500;
+            font-size: 0.9rem;
         }
         
         .save-notification.show {
@@ -453,50 +326,34 @@
             opacity: 1;
         }
         
-        .action-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: flex-start; /* Alineado a la izquierda */
-            gap: 15px;
-            margin-top: 20px;
+        /* --- FOOTER --- */
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: var(--text-light);
+            font-size: 0.8rem;
+            padding: 10px;
         }
         
-        .btn {
-            padding: 0;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            
-            /* Estilos para hacerlo circular */
-            width: 50px; 
-            height: 50px;
-            border-radius: 50%; 
-            font-size: 1.2rem;
+        /* --- MEDIA QUERIES --- */
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .users-container { grid-template-columns: 1fr; }
+            h1 { font-size: 1.5rem; }
+            .user-card { padding: 20px; }
+            .save-notification { right: 10px; bottom: 10px; }
         }
         
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        }
-        
+        /* Animación Confeti Simplificada */
         @keyframes confetti {
             0% { transform: translateY(0) rotate(0); opacity: 1; }
-            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+            100% { transform: translateY(80vh) rotate(360deg); opacity: 0; }
         }
         
         .confetti {
             position: fixed;
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             background: var(--accent);
             opacity: 0;
             z-index: 1001;
@@ -507,8 +364,8 @@
     
     <div class="container">
         <header>
-            <h1><i class="fas fa-tasks"></i> PANEL DE TAREAS EKT POPTUN</h1>
-            <p class="subtitle">REALIZAR CADA TRABAJO EN ÁREAS ASIGNADAS</p>
+            <h1><i class="fas fa-clipboard-list"></i> PANEL DE TAREAS GCC POPTUN</h1>
+            <p class="subtitle">Asignación de trabajos en áreas específicas</p>
             <div class="sync-time" id="current-datetime"></div>
         </header>
         
@@ -516,7 +373,7 @@
         </div>
         
         <div class="stats">
-            <h3><i class="fas fa-chart-bar"></i> RESUMEN DE REPORTES</h3>
+            <h3><i class="fas fa-chart-line"></i> Resumen de Progreso</h3>
             <div class="progress-container">
                 <div class="progress-bar">
                     <div class="progress" id="global-progress" style="width: 0%"></div>
@@ -541,7 +398,7 @@
     </div>
 
     <div class="save-notification" id="save-notification">
-        <i class="fas fa-check-circle"></i> Sincronización de Datos Exitosa
+        <i class="fas fa-sync-alt"></i> Sincronización Exitosa
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -549,6 +406,7 @@
     
     <script>
         const FIREBASE_CONFIG = {
+            // Manteniendo tu configuración original
             apiKey: "AIzaSyBcdWMdR_xVCFFQQPcTGPhbw8DYykN4qUg", 
             authDomain: "app-de-tareas-80324.firebaseapp.com",
             projectId: "app-de-tareas-80324",
@@ -557,7 +415,7 @@
             appId: "1:166776767275:web:a581ec25fc4c05063f3b6e",
             databaseURL: "https://app-de-tareas-80324-default-rtdb.firebaseio.com"
         };
-        const RESET_KEY = '0011'; // Llave de seguridad solicitada
+        const RESET_KEY = '0011'; 
         
         const app = firebase.initializeApp(FIREBASE_CONFIG);
         const database = app.database();
@@ -565,20 +423,18 @@
         
         let isSyncingFromFirebase = false; 
 
-        // --- TAREAS MODIFICABLES ---
+        // --- TAREAS MODIFICABLES (Mantenidas de tu código) ---
         const tareasTransferidasDeAmmy = [
             "Baño",
             "Comedor", 
             "Site",
-            "Archivos", 
-            "Nichos",
+            "Luces", 
+            "Perfilería",
         ];
         
         const tareasTransferidasDeCarlos = [
-            "Techo",
-            "Canales",
-            "Regillas",
-            "Planta",
+            "Puntos de red",
+            "Computadoras",
         ];
         
         let tareasHenry = [
@@ -588,32 +444,22 @@
         
         let tareasCarlos = [
             "Lokers",        
-            "luz emergencia",
+            "Archivos",
             "Luz corredor",
-            "columnas", 
-            "Área de TV Wall",
-            "Bodega en General",
-            "Gondolas de Sonido",
-            "Mueble de Telefonos",
-            "Mueble de Videojuegos",
-           
+            "Luz de Emergencia", 
+            "Columnas",
+            "Bodega de motos",
+     
         ];
 
         let tareasAmmy = [
             "fachada",
-            "Perfileria", 
+            "Techo", 
             "Puertas y Chapas", 
-            "Góndolas de Computadoras", 
-            "parqueo",
-            "Pintura gris",
-            "Iluminación sala 1",
-            "Iluminación sala 2",
-            "Lienzo Azteca Grande y Pequeño", 
-            "Bunker",
-            "Muebles de Atencion",
-            "Góndolas de Electrodomesticos",
-            "Muebles de Uso Personal",
-            "Perfileria", 
+            "Parqueo", 
+            "Pintura Gris",
+            "Lienzo Azteca",
+
         ];
         
         const usuarios = [
@@ -634,7 +480,7 @@
         }
         // --- FIN TAREAS MODIFICABLES ---
 
-        // --- FUNCIONES DE FIREBASE Y SINCRONIZACIÓN ---
+        // --- FUNCIONES DE FIREBASE Y SINCRONIZACIÓN (Mantenidas de tu código) ---
         async function guardarEstado() {
             if (isSyncingFromFirebase) {
                 return;
@@ -659,11 +505,11 @@
                     taskAssignmentState: estado,
                     lastUpdated: new Date().toISOString()
                 });
-                mostrarNotificacion("Sincronización de Datos Exitosa");
+                mostrarNotificacion("<i class='fas fa-check-circle'></i> Sincronización de Datos Exitosa");
                 mostrarFechaYHora();
             } catch (error) {
                 console.error("Error al guardar estado en Firebase RTDB:", error);
-                mostrarNotificacion("ERROR al sincronizar datos", true);
+                mostrarNotificacion("<i class='fas fa-exclamation-triangle'></i> ERROR al sincronizar datos", true);
             }
         }
         
@@ -701,12 +547,12 @@
                 });
                 
                 actualizarProgreso();
-                mostrarNotificacion("Datos cargados desde Firebase RTDB");
+                mostrarNotificacion("<i class='fas fa-download'></i> Datos cargados desde Firebase RTDB");
                 mostrarFechaYHora();
 
             } catch (error) {
                 console.error("Error al cargar estado desde Firebase RTDB:", error);
-                mostrarNotificacion("ERROR al cargar datos. Usando estado inicial.", true);
+                mostrarNotificacion("<i class='fas fa-exclamation-circle'></i> ERROR al cargar datos. Usando estado inicial.", true);
             } finally {
                 isSyncingFromFirebase = false; 
             }
@@ -714,8 +560,8 @@
         
         function mostrarNotificacion(message, isError = false) {
             const notification = document.getElementById('save-notification');
-            notification.textContent = message;
-            notification.style.background = isError ? '#c0392b' : 'var(--secondary)';
+            notification.innerHTML = message;
+            notification.style.background = isError ? '#d32f2f' : 'var(--complete)';
             notification.classList.add('show');
             setTimeout(() => {
                 notification.classList.remove('show');
@@ -724,17 +570,17 @@
         
         function mostrarFechaYHora() {
             const now = new Date();
-            const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+            const dateOptions = { year: 'numeric', month: 'short', day: 'numeric' };
             const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
             const formattedDate = now.toLocaleDateString('es-ES', dateOptions);
             const formattedTime = now.toLocaleTimeString('es-ES', timeOptions);
 
             const datetimeElement = document.getElementById('current-datetime');
-            datetimeElement.innerHTML = `<i class="far fa-clock"></i> Última Actualización Local: **${formattedDate}** a las **${formattedTime}**`;
+            datetimeElement.innerHTML = `<i class="far fa-clock"></i> Local: **${formattedDate}** - **${formattedTime}**`;
         }
         // --- FIN FUNCIONES DE FIREBASE Y SINCRONIZACIÓN ---
 
-        // --- FUNCIONES DE UI Y LÓGICA DE TAREAS ---
+        // --- FUNCIONES DE UI Y LÓGICA DE TAREAS (Mantenidas de tu código) ---
         
         async function crearAsignacionTareas(cargarEstadoFirebase = true) {
             const usuariosContainer = document.getElementById('users-container');
@@ -763,12 +609,22 @@
             const userCard = document.createElement('div');
             userCard.className = 'user-card';
             
+            // Asigna un color de borde basado en el nombre (para un toque más colorido)
+            let borderColor;
+            if (nombre === 'Henry') borderColor = '#4285F4'; // Azul Google
+            else if (nombre === 'Carlos') borderColor = '#DB4437'; // Rojo Google
+            else if (nombre === 'Ammy') borderColor = '#F4B400'; // Amarillo Google
+            else borderColor = 'var(--secondary)';
+            userCard.style.borderTopColor = borderColor;
+
+
             const userHeader = document.createElement('div');
             userHeader.className = 'user-header';
             
             const userAvatar = document.createElement('div');
             userAvatar.className = 'user-avatar';
             userAvatar.textContent = nombre.charAt(0);
+            userAvatar.style.backgroundColor = borderColor; // Avatar con el mismo color
             
             const userName = document.createElement('div');
             userName.className = 'user-name';
@@ -777,7 +633,8 @@
             const taskCounter = document.createElement('div');
             taskCounter.className = 'task-counter';
             taskCounter.textContent = `${tareas.length} tareas`;
-            
+            taskCounter.style.color = borderColor;
+
             userHeader.appendChild(userAvatar);
             userHeader.appendChild(userName);
             userHeader.appendChild(taskCounter);
@@ -789,7 +646,7 @@
                 const emptyMessage = document.createElement('li');
                 emptyMessage.className = 'task-item';
                 emptyMessage.style.justifyContent = 'center';
-                emptyMessage.innerHTML = '<span class="task-title" style="color:var(--secondary);">Sin tareas asignadas.</span>';
+                emptyMessage.innerHTML = '<span class="task-title" style="color:var(--text-light); border-bottom: none;">Sin tareas asignadas.</span>';
                 taskList.appendChild(emptyMessage);
             } else {
                 tareas.forEach(tarea => {
@@ -799,7 +656,8 @@
                     const taskCheckbox = document.createElement('input');
                     taskCheckbox.type = 'checkbox';
                     taskCheckbox.className = 'task-checkbox';
-                    
+                    taskCheckbox.style.borderColor = borderColor;
+
                     // Listener para los cambios de completado
                     taskCheckbox.addEventListener('change', function() {
                         actualizarProgreso();
@@ -808,7 +666,6 @@
                         // Aplicar/remover la clase de estilo
                         if (this.checked) {
                             taskItem.classList.add('task-completed');
-                            
                             const porcentaje = calcularPorcentajeProgreso();
                             if (porcentaje === 100) {
                                 crearConfeti();
@@ -818,7 +675,7 @@
                         }
                     });
                     
-                    // --- NUEVA ESTRUCTURA DE TEXTO CON SUB-DESCRIPCIÓN ---
+                    // --- ESTRUCTURA DE TEXTO CON SUB-DESCRIPCIÓN ---
                     const textContainer = document.createElement('div');
                     textContainer.className = 'task-text-container';
                     
@@ -841,7 +698,7 @@
 
                     // ÍCONO DE ELIMINAR INLINE
                     const deleteIcon = document.createElement('i');
-                    deleteIcon.className = 'fas fa-trash-alt delete-task-btn';
+                    deleteIcon.className = 'fas fa-times delete-task-btn'; // Icono 'times' es más simple
                     deleteIcon.title = `Eliminar la tarea '${tarea}'`;
 
                     deleteIcon.addEventListener('click', function() {
@@ -877,9 +734,9 @@
                 crearAsignacionTareas(true); 
                 guardarEstado();
 
-                mostrarNotificacion(`Tarea '${tareaAEliminar}' eliminada de ${userName}.`);
+                mostrarNotificacion(`<i class='fas fa-trash-alt'></i> Tarea '${tareaAEliminar}' eliminada de ${userName}.`);
             } else {
-                mostrarNotificacion(`Error: La tarea no pudo ser encontrada para eliminación.`, true);
+                mostrarNotificacion(`<i class='fas fa-exclamation-triangle'></i> Error: La tarea no pudo ser encontrada para eliminación.`, true);
             }
         }
         
@@ -902,6 +759,13 @@
             const progressBar = document.getElementById('global-progress');
             progressBar.style.width = `${porcentaje}%`;
             
+            // Cambiar color de la barra de progreso al 100%
+            if (porcentaje === 100) {
+                progressBar.style.backgroundColor = 'var(--complete)';
+            } else {
+                progressBar.style.backgroundColor = 'var(--secondary)';
+            }
+            
             document.getElementById('progress-percent').textContent = `${porcentaje}%`;
             
             const checkboxes = document.querySelectorAll('.task-checkbox');
@@ -921,29 +785,30 @@
         }
         
         function crearConfeti() {
-            const colors = ['#004d7a', '#00a896', '#ff6b6b', '#f9c74f', '#90be6d', '#577590'];
-            const confettiCount = 100;
+            const colors = ['#3b5998', '#00bcd4', '#ff9800', '#4caf50', '#ffc107', '#2196f3'];
+            const confettiCount = 50; // Reducido para simplicidad
             
             for (let i = 0; i < confettiCount; i++) {
                 const confetti = document.createElement('div');
                 confetti.className = 'confetti';
                 confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.top = -10 + 'vh'; // Empieza fuera de la vista
                 confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                confetti.style.animation = `confetti ${Math.random() * 3 + 2}s linear forwards`;
+                confetti.style.animation = `confetti ${Math.random() * 2 + 1.5}s linear forwards`;
                 document.body.appendChild(confetti);
                 
                 setTimeout(() => {
                     confetti.remove();
-                }, 5000);
+                }, 3500);
             }
         }
         // --- FIN FUNCIONES DE UI Y LÓGICA DE TAREAS ---
         
         
-        // --- EVENTOS PRINCIPALES ---
+        // --- EVENTOS PRINCIPALES (Mantenidos de tu código) ---
         window.addEventListener('DOMContentLoaded', () => {
             
-            // ** ALERTA DE MENSAJE IMPORTANTE (Solo se muestra una vez) **
+            // ** ALERTA DE MENSAJE IMPORTANTE (Mantenida) **
             const ALERT_KEY = 'alertShown';
             if (!localStorage.getItem(ALERT_KEY)) {
                 alert("IMPORTANTE: Realizar los trabajos que existan en cada área de reporte, ya que antes de finalizar ruta se pasará viendo y hasta que quede se retira de tienda.");
@@ -965,10 +830,10 @@
                     });
                     actualizarProgreso();
                     guardarEstado();
-                    mostrarNotificacion("Tareas completadas reiniciadas");
+                    mostrarNotificacion("<i class='fas fa-undo'></i> Tareas completadas reiniciadas");
                 } else if (key !== null) {
                     // Solo si el usuario no presiona "Cancelar"
-                    mostrarNotificacion("Llave de seguridad incorrecta. Reinicio cancelado.", true);
+                    mostrarNotificacion("<i class='fas fa-lock'></i> Llave de seguridad incorrecta. Reinicio cancelado.", true);
                 }
             });
             
