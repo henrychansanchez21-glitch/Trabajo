@@ -506,8 +506,7 @@
         
         let isSyncingFromFirebase = false; 
 
-        // --- TAREAS MODIFICABLES ---
-        // Se mantiene la estructura de tareas tal cual 
+        // --- TAREAS INICIALES (ESTAS SE REEMPLAZARÁN AL CARGAR DESDE FIREBASE) ---
         
         const tareasTransferidasDeAmmy = [
             "Baño",
@@ -546,14 +545,12 @@
             "Lienzo Azteca", 
             "Pintura General",
             "Recorrido Virtual",
-            
-
         ];
         
         const usuarios = [
-            { nombre: "Henry", tareas: tareasHenry.length, color: 'var(--accent-henry)' },
-            { nombre: "Carlos", tareas: tareasCarlos.length, color: 'var(--accent-carlos)' }, 
-            { nombre: "Ammy", tareas: tareasAmmy.length, color: 'var(--accent-ammy)' } 
+            { nombre: "Henry", color: 'var(--accent-henry)' },
+            { nombre: "Carlos", color: 'var(--accent-carlos)' }, 
+            { nombre: "Ammy", color: 'var(--accent-ammy)' } 
         ];
         
         function obtenerArrayTareas(nombreUsuario) {
@@ -563,36 +560,45 @@
             return [];
         }
         
-        function obtenerMensajeEstado(nombreUsuario) {
-            return null;
-        }
-        // --- FIN TAREAS MODIFICABLES ---
-
-        // --- FUNCIONES DE FIREBASE Y SINCRONIZACIÓN (Lógica ORIGINAL PRESERVADA) ---
+        // --- FUNCIONES DE FIREBASE Y SINCRONIZACIÓN (MODIFICADAS) ---
+        
+        /**
+         * Guarda TODA la información: Definiciones de tareas (strings) y estado de completado (booleanos).
+         */
         async function guardarEstado() {
             if (isSyncingFromFirebase) {
                 return;
             }
+
+            // 1. Obtener Definiciones de Tareas actuales (los arrays de strings)
+            const taskDefinitions = {
+                Henry: tareasHenry,
+                Carlos: tareasCarlos,
+                Ammy: tareasAmmy
+            };
             
-            const estado = {};
+            // 2. Obtener Estado de Completado (los arrays de booleanos)
+            const taskAssignmentState = {};
             document.querySelectorAll('.user-card').forEach((card) => {
                 const userNombre = card.querySelector('.user-name').textContent;
-                estado[userNombre] = [];
+                taskAssignmentState[userNombre] = [];
                 
                 card.querySelectorAll('.task-item').forEach((item) => {
                     const checkbox = item.querySelector('.task-checkbox');
-                    // PRESERVADO: Guarda solo el booleano
                     if (checkbox) {
-                        estado[userNombre].push(checkbox.checked); 
+                        taskAssignmentState[userNombre].push(checkbox.checked); 
                     }
                 });
             });
             
             try {
+                // Guarda todo en el nodo estado_global
                 await SYNC_REF.set({ 
-                    taskAssignmentState: estado,
+                    taskAssignmentState: taskAssignmentState, // El estado original (booleans)
+                    taskDefinitions: taskDefinitions, // ¡La lista de tareas guardada!
                     lastUpdated: new Date().toISOString()
                 });
+                
                 mostrarNotificacion("<i class='fas fa-check-circle'></i> Sincronización Exitosa", false, true); 
                 mostrarFechaYHora();
             } catch (error) {
@@ -601,6 +607,9 @@
             }
         }
         
+        /**
+         * Carga TODO: Definiciones de tareas y luego aplica el estado de completado.
+         */
         async function cargarEstado() {
             isSyncingFromFirebase = true; 
             
@@ -609,11 +618,25 @@
                 
                 if (!snapshot.exists()) {
                     isSyncingFromFirebase = false;
+                    dibujarAsignacionTareas(); // Dibuja con las tareas iniciales si no hay datos
                     document.body.classList.add('loaded'); 
                     return; 
                 }
                 
                 const data = snapshot.val();
+                
+                // --- PASO 1: CARGAR Y ACTUALIZAR DEFINICIONES DE TAREAS (strings) ---
+                if (data.taskDefinitions) {
+                    if (data.taskDefinitions.Henry) tareasHenry = data.taskDefinitions.Henry;
+                    if (data.taskDefinitions.Carlos) tareasCarlos = data.taskDefinitions.Carlos;
+                    if (data.taskDefinitions.Ammy) tareasAmmy = data.taskDefinitions.Ammy;
+                }
+
+                // --- PASO 2: DIBUJAR LA UI CON LAS TAREAS CARGADAS ---
+                // Esto crea los checkboxes en el DOM con la estructura correcta
+                dibujarAsignacionTareas(); 
+
+                // --- PASO 3: APLICAR ESTADO DE COMPLETADO (booleans) ---
                 const estado = data.taskAssignmentState; 
                 
                 document.querySelectorAll('.user-card').forEach(card => {
@@ -622,7 +645,6 @@
                         card.querySelectorAll('.task-item').forEach((item, index) => {
                             const checkbox = item.querySelector('.task-checkbox');
                             if (checkbox) {
-                                 // PRESERVADO: Aplica el estado basado en el índice
                                  const isChecked = index < estado[userNombre].length && estado[userNombre][index] === true;
                                  checkbox.checked = isChecked;
                                  
@@ -676,27 +698,19 @@
 
         // --- FUNCIONES DE UI Y LÓGICA DE TAREAS ---
         
-        async function crearAsignacionTareas(cargarEstadoFirebase = true) {
+        /**
+         * Función pura para dibujar la interfaz de usuario.
+         */
+        function dibujarAsignacionTareas() {
             const usuariosContainer = document.getElementById('users-container');
             usuariosContainer.innerHTML = '';
             
             usuarios.forEach(usuario => {
                 const tareasUsuario = obtenerArrayTareas(usuario.nombre);
-                
-                const usuarioData = usuarios.find(u => u.nombre === usuario.nombre);
-                if (usuarioData) {
-                    usuarioData.tareas = tareasUsuario.length;
-                }
                 crearTarjetaUsuario(usuario.nombre, usuario.color, tareasUsuario); 
             });
             
-            if (cargarEstadoFirebase) {
-                // Llama a cargarEstado() solo si se está iniciando la carga
-                await cargarEstado(); 
-            } else {
-                actualizarProgreso();
-                guardarEstado(); 
-            }
+            actualizarProgreso(); // Asegura que el progreso se actualice después de dibujar
         }
 
         function crearTarjetaUsuario(nombre, accentColor, tareas) {
@@ -766,7 +780,7 @@
                             taskItem.classList.remove('task-completed');
                         }
                         actualizarProgreso();
-                        guardarEstado(); 
+                        guardarEstado(); // Guarda el estado de completado
                     });
                     
                     const textContainer = document.createElement('div');
@@ -838,7 +852,8 @@
             
             targetArray.push(tareaNormalizada);
             
-            crearAsignacionTareas(false); 
+            dibujarAsignacionTareas(); // 1. Re-dibuja con la nueva lista
+            guardarEstado(); // 2. Guarda la nueva lista y el estado de completado
 
             mostrarNotificacion(`<i class='fas fa-plus'></i> Tarea '${tareaNormalizada}' agregada a ${userName}.`);
         }
@@ -857,7 +872,8 @@
             if (tareaIndex > -1) {
                 targetArray.splice(tareaIndex, 1);
                 
-                crearAsignacionTareas(false); 
+                dibujarAsignacionTareas(); // 1. Re-dibuja sin la tarea
+                guardarEstado(); // 2. Guarda la nueva lista y el estado de completado
 
                 mostrarNotificacion(`<i class='fas fa-trash-alt'></i> Tarea '${tareaAEliminar}' eliminada de ${userName}.`);
             } else {
@@ -923,7 +939,7 @@
         // --- FIN FUNCIONES DE UI Y LÓGICA DE TAREAS ---
         
         
-        // --- EVENTOS PRINCIPALES (BLOQUE CORREGIDO) ---
+        // --- EVENTOS PRINCIPALES ---
         window.addEventListener('DOMContentLoaded', () => {
             
             const ALERT_KEY = 'alertShown';
@@ -932,9 +948,8 @@
                 localStorage.setItem(ALERT_KEY, 'true');
             }
             
-            // ✅ FIX: Se llama a crearAsignacionTareas(true) para construir el HTML 
-            // antes de que cargarEstado() intente encontrar los checkboxes.
-            crearAsignacionTareas(true); 
+            // Carga TODO (Definiciones y estado de completado)
+            cargarEstado(); 
             
             // Lógica del botón de Reinicio con llave de seguridad
             document.getElementById('reset-btn').addEventListener('click', function() {
@@ -946,7 +961,7 @@
                         checkbox.closest('.task-item').classList.remove('task-completed'); 
                     });
                     actualizarProgreso();
-                    guardarEstado();
+                    guardarEstado(); // Guarda el estado de checks reiniciado
                     mostrarNotificacion("<i class='fas fa-undo'></i> Tareas completadas reiniciadas");
                 } else if (key !== null) {
                     mostrarNotificacion("<i class='fas fa-lock'></i> Llave de seguridad incorrecta. Reinicio cancelado.", true);
