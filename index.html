@@ -506,9 +506,9 @@
         
         let isSyncingFromFirebase = false; 
 
-        // --- TAREAS INICIALES HARCODEADAS (Sirven como valor por defecto si LocalStorage está vacío) ---
+        // --- TAREAS INICIALES HARCODEADAS (Sirven como valor por defecto si Firebase está vacío) ---
         
-        const initialTareasHenry = [
+        let tareasHenry = [
             "Baño",
             "Comedor", 
             "Site",
@@ -518,7 +518,7 @@
             "Computadoras",
         ];
         
-        const initialTareasCarlos = [
+        let tareasCarlos = [
             "Lokers",        
             "Archivos",
             "Luz corredor",
@@ -528,7 +528,7 @@
      
         ];
 
-        const initialTareasAmmy = [
+        let tareasAmmy = [
             "fachada",
             "Techo", 
             "Puertas y Chapas", 
@@ -538,11 +538,6 @@
             "Pintura General",
             "Recorrido Virtual",
         ];
-
-        // Arrays de trabajo (se inicializan con los valores por defecto o se cargan de LocalStorage)
-        let tareasHenry = [...initialTareasHenry];
-        let tareasCarlos = [...initialTareasCarlos];
-        let tareasAmmy = [...initialTareasAmmy];
         
         const usuarios = [
             { nombre: "Henry", color: 'var(--accent-henry)' },
@@ -556,52 +551,25 @@
             if (nombreUsuario === "Ammy") return tareasAmmy;
             return [];
         }
-
-        // --- FUNCIONES PARA PERSISTENCIA DE TAREAS EN LOCALSTORAGE (NUEVO) ---
         
-        function guardarTareasLocal() {
-            const taskDefinitions = {
-                Henry: tareasHenry,
-                Carlos: tareasCarlos,
-                Ammy: tareasAmmy
-            };
-            // Guarda las listas de strings en el almacenamiento local del navegador
-            localStorage.setItem('taskDefinitions', JSON.stringify(taskDefinitions));
-        }
-
-        function cargarTareasLocal() {
-            const localData = localStorage.getItem('taskDefinitions');
-            if (localData) {
-                try {
-                    const definitions = JSON.parse(localData);
-                    // Sobrescribe las listas con los datos guardados localmente
-                    if (definitions.Henry) tareasHenry = definitions.Henry;
-                    if (definitions.Carlos) tareasCarlos = definitions.Carlos;
-                    if (definitions.Ammy) tareasAmmy = definitions.Ammy;
-                    return true; // Éxito
-                } catch (e) {
-                    console.error("Error al parsear tareas de LocalStorage:", e);
-                    return false; // Fallo
-                }
-            }
-            return false; // No hay datos locales
-        }
-        
-        // --- FUNCIONES DE FIREBASE Y SINCRONIZACIÓN (MODIFICADAS) ---
+        // --- FUNCIONES DE FIREBASE Y SINCRONIZACIÓN (REVISADAS) ---
         
         /**
-         * Guarda el estado de completado (checkboxes) en Firebase.
-         * También llama a guardarTareasLocal() para persistir las listas dinámicas.
+         * Guarda TODA la información: Definiciones de tareas (strings) y estado de completado (booleanos) en Firebase.
          */
         async function guardarEstado() {
             if (isSyncingFromFirebase) {
                 return;
             }
 
-            // PASO 1: Guardar listas de tareas en LocalStorage (Persistencia de strings local)
-            guardarTareasLocal(); 
+            // 1. Obtener Definiciones de Tareas actuales (los arrays de strings)
+            const taskDefinitions = {
+                Henry: tareasHenry,
+                Carlos: tareasCarlos,
+                Ammy: tareasAmmy
+            };
             
-            // PASO 2: Obtener Estado de Completado (booleanos) para Firebase
+            // 2. Obtener Estado de Completado (los arrays de booleanos)
             const taskAssignmentState = {};
             document.querySelectorAll('.user-card').forEach((card) => {
                 const userNombre = card.querySelector('.user-name').textContent;
@@ -616,9 +584,10 @@
             });
             
             try {
-                // SOLO guarda el estado de completado en Firebase
+                // Guarda taskDefinitions y taskAssignmentState
                 await SYNC_REF.set({ 
-                    taskAssignmentState: taskAssignmentState, 
+                    taskAssignmentState: taskAssignmentState, // El estado de los checks
+                    taskDefinitions: taskDefinitions, // ¡Las listas de tareas dinámicas!
                     lastUpdated: new Date().toISOString()
                 });
                 
@@ -631,30 +600,36 @@
         }
         
         /**
-         * Carga Definiciones de tareas de LocalStorage y Estado de checks de Firebase.
+         * Carga TODO: Definiciones de tareas (strings) y luego aplica el estado de completado (checks).
          */
         async function cargarEstado() {
             isSyncingFromFirebase = true; 
             
-            // --- PASO 1: CARGAR DEFINICIONES DE TAREAS DESDE LOCALSTORAGE ---
-            // Esto asegura que si el usuario agregó/eliminó tareas, se muestren al recargar.
-            cargarTareasLocal(); 
-
-            // --- PASO 2: DIBUJAR LA UI CON LAS TAREAS CARGADAS (LOCAL) ---
-            dibujarAsignacionTareas(); 
-
              try {
                 const snapshot = await SYNC_REF.once('value');
                 
                 if (!snapshot.exists()) {
                     isSyncingFromFirebase = false;
+                    dibujarAsignacionTareas(); // Dibuja con las tareas iniciales si no hay datos
                     document.body.classList.add('loaded'); 
                     return; 
                 }
                 
                 const data = snapshot.val();
                 
-                // --- PASO 3: APLICAR ESTADO DE COMPLETADO (booleans) DESDE FIREBASE ---
+                // --- PASO 1: CARGAR Y ACTUALIZAR DEFINICIONES DE TAREAS (strings) ---
+                if (data.taskDefinitions) {
+                    // *** Esto actualiza las variables globales con los datos de Firebase ***
+                    if (data.taskDefinitions.Henry) tareasHenry = data.taskDefinitions.Henry;
+                    if (data.taskDefinitions.Carlos) tareasCarlos = data.taskDefinitions.Carlos;
+                    if (data.taskDefinitions.Ammy) tareasAmmy = data.taskDefinitions.Ammy;
+                }
+
+                // --- PASO 2: DIBUJAR LA UI CON LAS TAREAS CARGADAS ---
+                // Esto crea los checkboxes en el DOM usando las variables globales actualizadas
+                dibujarAsignacionTareas(); 
+
+                // --- PASO 3: APLICAR ESTADO DE COMPLETADO (booleans) ---
                 const estado = data.taskAssignmentState; 
                 
                 document.querySelectorAll('.user-card').forEach(card => {
@@ -681,7 +656,7 @@
 
             } catch (error) {
                 console.error("Error al cargar estado desde Firebase RTDB:", error);
-                mostrarNotificacion("<i class='fas fa-exclamation-circle'></i> ERROR al cargar checks. Usando estado inicial.", true);
+                mostrarNotificacion("<i class='fas fa-exclamation-circle'></i> ERROR al cargar datos. Usando estado inicial.", true);
             } finally {
                 isSyncingFromFirebase = false; 
                 document.body.classList.add('loaded'); // Activa el fade-in
@@ -728,7 +703,7 @@
                 crearTarjetaUsuario(usuario.nombre, usuario.color, tareasUsuario); 
             });
             
-            actualizarProgreso(); 
+            actualizarProgreso(); // Asegura que el progreso se actualice después de dibujar
         }
 
         function crearTarjetaUsuario(nombre, accentColor, tareas) {
@@ -798,7 +773,7 @@
                             taskItem.classList.remove('task-completed');
                         }
                         actualizarProgreso();
-                        guardarEstado(); // Guarda el estado de completado (y las listas a LocalStorage)
+                        guardarEstado(); // Guarda el estado de completado Y la lista de tareas
                     });
                     
                     const textContainer = document.createElement('div');
@@ -870,8 +845,8 @@
             
             targetArray.push(tareaNormalizada);
             
-            dibujarAsignacionTareas(); 
-            guardarEstado(); // Guarda la nueva lista en LocalStorage y el estado en Firebase.
+            dibujarAsignacionTareas(); // 1. Re-dibuja con la nueva lista
+            guardarEstado(); // 2. Guarda la nueva lista y el estado de completado en Firebase
 
             mostrarNotificacion(`<i class='fas fa-plus'></i> Tarea '${tareaNormalizada}' agregada a ${userName}.`);
         }
@@ -890,8 +865,8 @@
             if (tareaIndex > -1) {
                 targetArray.splice(tareaIndex, 1);
                 
-                dibujarAsignacionTareas(); 
-                guardarEstado(); // Guarda la nueva lista en LocalStorage y el estado en Firebase.
+                dibujarAsignacionTareas(); // 1. Re-dibuja sin la tarea
+                guardarEstado(); // 2. Guarda la nueva lista y el estado de completado en Firebase
 
                 mostrarNotificacion(`<i class='fas fa-trash-alt'></i> Tarea '${tareaAEliminar}' eliminada de ${userName}.`);
             } else {
@@ -966,7 +941,7 @@
                 localStorage.setItem(ALERT_KEY, 'true');
             }
             
-            // Carga las listas de tareas de LocalStorage y el estado de checks de Firebase
+            // Carga TODO: Listas de tareas y estado de checks desde Firebase
             cargarEstado(); 
             
             // Lógica del botón de Reinicio con llave de seguridad
@@ -986,10 +961,10 @@
                 }
             });
             
-            // Sincronización automática de checks cada 30 segundos
+            // Sincronización automática cada 30 segundos
             setInterval(guardarEstado, 30000);
             
-            // Listener de Firebase para actualizar en tiempo real si otro usuario cambia el estado de checks
+            // Listener de Firebase para actualizar en tiempo real si otro usuario cambia datos
             SYNC_REF.on('value', (snapshot) => {
                  if (document.readyState === 'complete' && !isSyncingFromFirebase) {
                      cargarEstado(); 
