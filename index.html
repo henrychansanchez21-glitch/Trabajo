@@ -3,37 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asignador de Tareas - Móvil</title>
+    <title>Asignador de Tareas con Firebase</title>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        // Configuración de Firebase (REEMPLAZA CON TU CONFIGURACIÓN REAL)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBcdWMdR_xVCFFQQPcTGPhbw8DYykN4qUg",
+            authDomain: "app-de-tareas-80324.firebaseapp.com",
+            projectId: "app-de-tareas-80324",
+            storageBucket: "app-de-tareas-80324.firebasestorage.app",
+            messagingSenderId: "166776767275",
+            appId: "1:166776767275:web:f6f7edada36c02b93f3b6e"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Exportar db para usar en el script principal
+        window.db = db;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.getDocs = getDocs;
+        window.deleteDoc = deleteDoc;
+        window.doc = doc;
+        window.updateDoc = updateDoc;
+    </script>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 10px;
+            padding: 20px;
             background-color: #f4f4f4;
             color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
         }
         h1 {
-            font-size: 1.5em;
-            margin-bottom: 20px;
             text-align: center;
+            font-size: 1.5em;
         }
         .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        input, select, button {
             width: 100%;
-            max-width: 400px; /* Ajustado para móviles */
-        }
-        .task-form {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 20px;
-        }
-        input, button {
             padding: 10px;
-            margin: 5px 0;
+            margin: 10px 0;
             border: 1px solid #ccc;
-            border-radius: 5px;
+            border-radius: 4px;
             font-size: 1em;
         }
         button {
@@ -44,105 +68,137 @@
         button:hover {
             background-color: #45a049;
         }
-        .task-list {
+        ul {
             list-style: none;
             padding: 0;
         }
-        .task-item {
-            background-color: white;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        li {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 10px;
         }
-        .task-item.completed {
+        li.completed {
             text-decoration: line-through;
-            opacity: 0.6;
+            color: #888;
         }
-        .task-content {
+        .task-checkbox {
+            margin-right: 10px;
+            margin-top: 5px;
+        }
+        .task-details {
             flex: 1;
-            margin-left: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .task-text {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .assignee {
+            font-size: 0.9em;
+            color: #666;
         }
         .delete-btn {
-            padding: 5px 10px;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 0.9em;
-            background-color: #f44336;
+            background: #f44336;
             color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
             margin-left: 10px;
-        }
-        @media (max-width: 600px) {
-            /* Asegurar que sea perfecto para móviles */
-            .task-item {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            .task-content {
-                margin-left: 0;
-                margin-top: 10px;
-            }
-            .delete-btn {
-                margin-top: 10px;
-                width: 100%;
-            }
+            align-self: flex-start;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Asignador de Tareas</h1>
-        <form class="task-form" id="taskForm">
-            <input type="text" id="taskTitle" placeholder="Título de la tarea" required>
-            <input type="text" id="taskAssignee" placeholder="Asignar a (opcional)">
-            <button type="submit">Agregar Tarea</button>
-        </form>
-        <ul class="task-list" id="taskList"></ul>
+        <h1>Asignador de Tareas con Firebase</h1>
+        <input type="text" id="task-input" placeholder="Escribe la tarea">
+        <select id="assignee-select">
+            <option value="">Selecciona a una persona</option>
+            <option value="Henry">Henry</option>
+            <option value="Carlos">Carlos</option>
+            <option value="Ammy">Ammy</option>
+        </select>
+        <button id="add-task-btn">Agregar Tarea</button>
+        <ul id="task-list"></ul>
     </div>
 
     <script>
-        const taskForm = document.getElementById('taskForm');
-        const taskList = document.getElementById('taskList');
-        const taskTitle = document.getElementById('taskTitle');
-        const taskAssignee = document.getElementById('taskAssignee');
+        const taskInput = document.getElementById('task-input');
+        const assigneeSelect = document.getElementById('assignee-select');
+        const addTaskBtn = document.getElementById('add-task-btn');
+        const taskList = document.getElementById('task-list');
 
-        taskForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const title = taskTitle.value.trim();
-            const assignee = taskAssignee.value.trim();
-            if (title) {
-                addTask(title, assignee);
-                taskTitle.value = '';
-                taskAssignee.value = '';
-            }
-        });
+        // Función para cargar tareas desde Firestore
+        async function loadTasks() {
+            const querySnapshot = await getDocs(collection(window.db, "tasks"));
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                addTaskToUI(data.taskText, data.assignee, data.completed, doc.id);
+            });
+        }
 
-        function addTask(title, assignee) {
+        // Función para agregar tarea a la UI
+        function addTaskToUI(taskText, assignee, completed, id) {
             const li = document.createElement('li');
-            li.className = 'task-item';
+            li.classList.toggle('completed', completed);
             li.innerHTML = `
-                <input type="checkbox" class="task-checkbox">
-                <div class="task-content">
-                    <strong>${title}</strong>
-                    ${assignee ? `<br><small>Asignado a: ${assignee}</small>` : ''}
+                <input type="checkbox" class="task-checkbox" ${completed ? 'checked' : ''}>
+                <div class="task-details">
+                    <div class="task-text">${taskText}</div>
+                    <div class="assignee">Asignado a: ${assignee}</div>
                 </div>
                 <button class="delete-btn">Eliminar</button>
             `;
             taskList.appendChild(li);
 
-            // Event listener para el checkbox
-            li.querySelector('.task-checkbox').addEventListener('change', function() {
+            // Evento para checkbox (actualizar en Firestore)
+            const checkbox = li.querySelector('.task-checkbox');
+            checkbox.addEventListener('change', async () => {
                 li.classList.toggle('completed');
+                await updateDoc(doc(window.db, "tasks", id), {
+                    completed: checkbox.checked
+                });
             });
 
-            // Event listener para eliminar
-            li.querySelector('.delete-btn').addEventListener('click', function() {
+            // Evento para eliminar
+            const deleteBtn = li.querySelector('.delete-btn');
+            deleteBtn.addEventListener('click', async () => {
+                await deleteDoc(doc(window.db, "tasks", id));
                 taskList.removeChild(li);
             });
         }
+
+        // Evento para agregar tarea
+        addTaskBtn.addEventListener('click', async () => {
+            const taskText = taskInput.value.trim();
+            const assignee = assigneeSelect.value;
+            if (taskText && assignee) {
+                try {
+                    const docRef = await addDoc(collection(window.db, "tasks"), {
+                        taskText: taskText,
+                        assignee: assignee,
+                        completed: false
+                    });
+                    addTaskToUI(taskText, assignee, false, docRef.id);
+
+                    // Limpiar inputs
+                    taskInput.value = '';
+                    assigneeSelect.value = '';
+                } catch (e) {
+                    console.error("Error adding document: ", e);
+                    alert("Error al agregar tarea. Revisa la consola.");
+                }
+            } else {
+                alert('Por favor, completa la tarea y selecciona a una persona.');
+            }
+        });
+
+        // Cargar tareas al iniciar
+        loadTasks();
     </script>
 </body>
 </html>
