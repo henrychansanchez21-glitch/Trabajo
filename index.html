@@ -3,364 +3,348 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asistente de Tareas</title>
+    <title>Asignador de Tareas Colaborativo</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuración de la fuente Inter -->
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
         body {
-            background-color: #f5f5f5;
-            color: #333;
-            line-height: 1.6;
-            padding: 20px;
-            max-width: 500px;
-            margin: 0 auto;
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
         }
-        
-        .container {
-            background-color: white;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        
-        h1 {
-            text-align: center;
-            color: #4a6fa5;
-            margin-bottom: 20px;
-            font-size: 1.8rem;
-        }
-        
-        .input-container {
-            display: flex;
-            margin-bottom: 20px;
-        }
-        
-        #taskInput {
-            flex: 1;
-            padding: 12px 15px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            margin-right: 10px;
-        }
-        
-        #addBtn {
-            background-color: #4a6fa5;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 12px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        
-        #addBtn:hover {
-            background-color: #3a5a80;
-        }
-        
-        .filter-container {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-        }
-        
-        .filter-btn {
-            flex: 1;
-            padding: 10px;
-            margin: 0 5px;
-            background-color: #f0f0f0;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 14px;
-        }
-        
-        .filter-btn.active {
-            background-color: #4a6fa5;
-            color: white;
-        }
-        
-        .task-list {
-            list-style-type: none;
-        }
-        
-        .task-item {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            transition: all 0.3s;
-        }
-        
-        .task-item:last-child {
-            border-bottom: none;
-        }
-        
-        .task-item.completed {
-            background-color: #f9f9f9;
-            opacity: 0.7;
-        }
-        
-        .task-checkbox {
-            margin-right: 15px;
-            transform: scale(1.2);
-        }
-        
-        .task-text {
-            flex: 1;
-            font-size: 16px;
-        }
-        
-        .task-item.completed .task-text {
+        /* Estilo para tachar el texto completado */
+        .task-completed .task-description,
+        .task-completed .task-assignee {
             text-decoration: line-through;
-            color: #888;
-        }
-        
-        .delete-btn {
-            background: none;
-            border: none;
-            color: #e74c3c;
-            font-size: 18px;
-            cursor: pointer;
-            padding: 5px;
-            margin-left: 10px;
-        }
-        
-        .stats {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #eee;
-            font-size: 14px;
-            color: #666;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 30px;
-            color: #888;
-        }
-        
-        .empty-state img {
-            width: 100px;
-            margin-bottom: 15px;
-            opacity: 0.5;
-        }
-        
-        @media (max-width: 480px) {
-            body {
-                padding: 10px;
-            }
-            
-            .container {
-                padding: 15px;
-            }
-            
-            h1 {
-                font-size: 1.5rem;
-            }
-            
-            .filter-container {
-                flex-direction: column;
-            }
-            
-            .filter-btn {
-                margin: 3px 0;
-            }
+            color: #9ca3af; /* gray-400 */
         }
     </style>
+    <!-- Firebase Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        // REMOVIDO: import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "firebase/auth";
+        import { getFirestore, doc, addDoc, deleteDoc, onSnapshot, collection, query, serverTimestamp, setLogLevel, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Establecer nivel de log para depuración de Firestore
+        setLogLevel('debug');
+
+        // =========================================================================================
+        // CONFIGURACIÓN DE FIREBASE (PROPORCIONADA POR EL USUARIO)
+        // =========================================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBGqi47buPZbP32mKFjqAYyZeYeSTRF32Y",
+            authDomain: "nuevastareas-5a044.firebaseapp.com",
+            projectId: "nuevastareas-5a044",
+            storageBucket: "nuevastareas-5a044.firebasestorage.app",
+            messagingSenderId: "57610924140",
+            appId: "1:57610924140:web:20fec16c57eea0ce832849"
+        };
+
+        // Usamos el projectId como identificador único para la ruta de Firestore
+        const appId = firebaseConfig.projectId; 
+        
+        // Dado que la autenticación fue eliminada, usamos un ID constante para identificar al creador
+        const PUBLIC_USER_ID = "PUBLIC_ACCESS"; 
+        
+        // Inicialización de Firebase
+        let app, db;
+        let currentUserId = PUBLIC_USER_ID;
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            console.log("Firebase inicializado sin autenticación.");
+            document.getElementById('user-id-display').textContent = `ID de Usuario: ${PUBLIC_USER_ID} (Acceso Público)`;
+            startRealtimeTaskListener();
+
+        } catch (error) {
+            console.error("Error al inicializar Firebase con la configuración proporcionada:", error);
+            document.getElementById('error-message').textContent = 'Error al inicializar Firebase. Revisa la consola y tu configuración.';
+            document.getElementById('error-message').classList.remove('hidden');
+        }
+
+
+        // --- Funciones de Firestore ---
+
+        /**
+         * Obtiene la referencia a la colección de tareas compartidas.
+         * Ruta: /artifacts/{projectId}/public/data/tasks
+         */
+        function getTasksCollectionRef() {
+            const path = `artifacts/${appId}/public/data/tasks`;
+            console.log("Ruta de Firestore usada:", path);
+            return collection(db, path);
+        }
+        
+        /**
+         * Ruta completa al documento de la tarea.
+         */
+        function getTaskDocRef(taskId) {
+            return doc(db, `artifacts/${appId}/public/data/tasks/${taskId}`);
+        }
+
+        /**
+         * Agrega una nueva tarea a Firestore.
+         */
+        window.addTask = async function() {
+            
+            const descriptionInput = document.getElementById('task-description');
+            const assigneeInput = document.getElementById('task-assignee');
+
+            const description = descriptionInput.value.trim();
+            const assignee = assigneeInput.value.trim() || 'Sin asignar';
+
+            if (!description) {
+                alertModal("Error", "La descripción de la tarea no puede estar vacía.");
+                return;
+            }
+
+            const taskData = {
+                description: description,
+                assignee: assignee,
+                createdBy: currentUserId, // Usa el ID de acceso público
+                createdAt: serverTimestamp(),
+                completed: false
+            };
+
+            try {
+                const docRef = await addDoc(getTasksCollectionRef(), taskData);
+                console.log("Tarea agregada con ID:", docRef.id);
+                // Limpiar campos
+                descriptionInput.value = '';
+                assigneeInput.value = '';
+            } catch (e) {
+                console.error("Error al añadir documento (REVISA REGLAS: DEBEN SER PÚBLICAS): ", e);
+                alertModal("Error de Base de Datos", "No se pudo añadir la tarea. Asegúrate de que tus reglas de Firestore permitan el acceso público (if true).");
+            }
+        }
+
+        /**
+         * Alterna el estado 'completed' de una tarea en Firestore.
+         */
+        window.toggleTaskCompletion = async function(taskId, currentStatus) {
+            try {
+                const taskDocRef = getTaskDocRef(taskId);
+                await updateDoc(taskDocRef, {
+                    completed: !currentStatus
+                });
+                console.log("Estado de tarea actualizado:", taskId, "->", !currentStatus);
+            } catch (e) {
+                console.error("Error al actualizar el estado de la tarea (REVISA REGLAS): ", e);
+                alertModal("Error de Base de Datos", "No se pudo actualizar el estado de la tarea. Asegúrate de que tus reglas de Firestore permitan el acceso público (if true).");
+            }
+        }
+
+        /**
+         * Elimina una tarea de Firestore.
+         */
+        window.deleteTask = async function(taskId) {
+            try {
+                await deleteDoc(getTaskDocRef(taskId));
+                console.log("Tarea eliminada:", taskId);
+            } catch (e) {
+                console.error("Error al eliminar documento (REVISA REGLAS): ", e);
+                alertModal("Error de Base de Datos", "No se pudo eliminar la tarea. Asegúrate de que tus reglas de Firestore permitan el acceso público (if true).");
+            }
+        }
+
+        /**
+         * Muestra un modal personalizado en lugar de usar alert().
+         */
+        function alertModal(title, message) {
+            const modal = document.getElementById('custom-modal');
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            modal.classList.remove('hidden');
+        }
+
+        window.closeModal = function() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+
+        /**
+         * Inicia el listener de tiempo real para las tareas.
+         */
+        function startRealtimeTaskListener() {
+            if (!db) return;
+
+            console.log("Iniciando listener de tareas en tiempo real...");
+            const tasksRef = getTasksCollectionRef();
+            const q = query(tasksRef);
+
+            onSnapshot(q, (snapshot) => {
+                const tasksList = [];
+                snapshot.forEach((doc) => {
+                    tasksList.push({ id: doc.id, ...doc.data() });
+                });
+
+                // 1. Separar completadas de pendientes
+                const pendingTasks = tasksList.filter(t => !t.completed);
+                const completedTasks = tasksList.filter(t => t.completed);
+
+                // 2. Ordenar pendientes por fecha de creación (más recientes primero)
+                pendingTasks.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+                
+                // 3. Ordenar completadas por fecha de creación (más recientes primero)
+                completedTasks.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+
+
+                // 4. Juntar listas (pendientes primero)
+                const sortedTasks = [...pendingTasks, ...completedTasks];
+
+                renderTasks(sortedTasks);
+            }, (error) => {
+                console.error("Error al obtener instantánea de tareas:", error);
+                document.getElementById('error-message').textContent = 'Error de conexión en tiempo real con Firestore. Revisa tus reglas de seguridad (deben ser públicas).';
+                document.getElementById('error-message').classList.remove('hidden');
+            });
+        }
+
+        /**
+         * Renderiza la lista de tareas en el DOM.
+         */
+        function renderTasks(tasks) {
+            const tasksContainer = document.getElementById('tasks-container');
+            tasksContainer.innerHTML = ''; // Limpiar lista existente
+            
+            if (tasks.length === 0) {
+                tasksContainer.innerHTML = `
+                    <p class="text-center text-gray-500 py-6">
+                        No hay tareas asignadas aún. ¡Añade una!
+                    </p>
+                `;
+                return;
+            }
+
+            tasks.forEach(task => {
+                const dateString = task.createdAt
+                    ? new Date(task.createdAt.toMillis()).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+                    : 'Fecha desconocida';
+                
+                const isCompleted = task.completed;
+                const taskClass = isCompleted 
+                    ? 'task-completed bg-green-50 border-green-200 hover:shadow-lg' 
+                    : 'bg-white border-gray-200 hover:shadow-lg';
+
+                const taskElement = `
+                    <div class="flex items-center justify-between p-4 border rounded-xl shadow-md transition duration-300 ease-in-out ${taskClass}">
+                        
+                        <!-- Checkbox y Contenido -->
+                        <div class="flex items-center flex-1 min-w-0 mr-4">
+                            <input
+                                type="checkbox"
+                                ${isCompleted ? 'checked' : ''}
+                                onclick="toggleTaskCompletion('${task.id}', ${isCompleted})"
+                                class="h-5 w-5 mr-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                            >
+
+                            <div class="min-w-0">
+                                <p class="task-description text-lg font-semibold text-gray-800 break-words">${task.description}</p>
+                                <div class="mt-1 text-sm text-gray-600 space-y-1">
+                                    <p class="task-assignee">
+                                        <span class="font-medium ${isCompleted ? 'text-gray-400' : 'text-blue-600'}">Asignado a:</span> ${task.assignee}
+                                    </p>
+                                    <p class="text-xs text-gray-400">
+                                        <span class="font-medium">Creado por:</span> ${task.createdBy === PUBLIC_USER_ID ? 'Público' : task.createdBy.substring(0, 8)}...
+                                        el ${dateString}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de Acción -->
+                        <div class="flex-shrink-0 flex items-center space-x-2">
+                            <button
+                                onclick="deleteTask('${task.id}')"
+                                class="p-2 text-red-600 bg-red-100 hover:bg-red-200 rounded-full transition duration-150 ease-in-out"
+                                title="Eliminar Tarea"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                tasksContainer.insertAdjacentHTML('beforeend', taskElement);
+            });
+        }
+    </script>
 </head>
-<body>
-    <div class="container">
-        <h1>Mis Tareas</h1>
-        
-        <div class="input-container">
-            <input type="text" id="taskInput" placeholder="Escribe una nueva tarea...">
-            <button id="addBtn">Agregar</button>
+<body class="min-h-screen p-4 md:p-8">
+
+    <div class="max-w-3xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">
+                Asignador de Tareas <span class="text-blue-600">Público</span>
+            </h1>
+            <p class="text-gray-500 mt-2">Gestiona tareas con tu equipo en tiempo real sin autenticación.</p>
+            <p id="user-id-display" class="text-xs text-gray-400 mt-1">ID de Usuario: Cargando...</p>
+        </header>
+
+        <!-- Sección de Añadir Tarea -->
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-xl mb-8 border border-blue-100">
+            <h2 class="text-2xl font-bold text-gray-700 mb-4">Nueva Tarea</h2>
+            <form id="task-form" onsubmit="event.preventDefault(); addTask();">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Campo Descripción -->
+                    <div>
+                        <label for="task-description" class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                        <input
+                            type="text"
+                            id="task-description"
+                            placeholder="Escribe la tarea a asignar (e.g., Revisar reporte de ventas)"
+                            required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+                        >
+                    </div>
+                    <!-- Campo Asignado -->
+                    <div>
+                        <label for="task-assignee" class="block text-sm font-medium text-gray-700 mb-1">Asignar a</label>
+                        <input
+                            type="text"
+                            id="task-assignee"
+                            placeholder="Nombre de la persona (o un ID de usuario)"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150"
+                        >
+                    </div>
+                </div>
+                <!-- Botón Añadir -->
+                <button
+                    type="submit"
+                    class="mt-6 w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition duration-200 transform hover:scale-[1.01] active:scale-[0.99]"
+                >
+                    Añadir Tarea
+                </button>
+            </form>
         </div>
-        
-        <div class="filter-container">
-            <button class="filter-btn active" data-filter="all">Todas</button>
-            <button class="filter-btn" data-filter="pending">Pendientes</button>
-            <button class="filter-btn" data-filter="completed">Completadas</button>
+
+        <!-- Lista de Tareas -->
+        <h2 class="text-2xl font-bold text-gray-700 mb-4">Lista de Tareas</h2>
+        <div id="tasks-container" class="space-y-4">
+            <!-- Las tareas se inyectarán aquí por JavaScript -->
+            <div class="text-center py-10 bg-white rounded-xl shadow-md border border-gray-200">
+                <div class="animate-pulse text-gray-400">Cargando tareas...</div>
+                <p id="error-message" class="text-red-500 mt-2 hidden"></p>
+            </div>
         </div>
-        
-        <ul class="task-list" id="taskList">
-            <!-- Las tareas se agregarán aquí dinámicamente -->
-        </ul>
-        
-        <div class="stats">
-            <span id="totalTasks">Total: 0</span>
-            <span id="completedTasks">Completadas: 0</span>
+
+    </div>
+
+    <!-- Modal Personalizado para Errores (Sustituto de alert()) -->
+    <div id="custom-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300">
+        <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full transform transition-all duration-300 scale-100">
+            <h3 id="modal-title" class="text-xl font-bold text-red-600 mb-3">Error</h3>
+            <p id="modal-message" class="text-gray-700 mb-5">Mensaje de error.</p>
+            <button
+                onclick="closeModal()"
+                class="w-full py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200"
+            >
+                Entendido
+            </button>
         </div>
     </div>
 
-    <script>
-        // Elementos del DOM
-        const taskInput = document.getElementById('taskInput');
-        const addBtn = document.getElementById('addBtn');
-        const taskList = document.getElementById('taskList');
-        const filterBtns = document.querySelectorAll('.filter-btn');
-        const totalTasksSpan = document.getElementById('totalTasks');
-        const completedTasksSpan = document.getElementById('completedTasks');
-        
-        // Array para almacenar las tareas
-        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        let currentFilter = 'all';
-        
-        // Inicializar la aplicación
-        function init() {
-            renderTasks();
-            updateStats();
-            
-            // Event listeners
-            addBtn.addEventListener('click', addTask);
-            taskInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    addTask();
-                }
-            });
-            
-            filterBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    // Actualizar botones activos
-                    filterBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    // Cambiar filtro
-                    currentFilter = this.getAttribute('data-filter');
-                    renderTasks();
-                });
-            });
-        }
-        
-        // Agregar una nueva tarea
-        function addTask() {
-            const text = taskInput.value.trim();
-            
-            if (text === '') {
-                alert('Por favor, escribe una tarea');
-                return;
-            }
-            
-            // Crear nueva tarea
-            const newTask = {
-                id: Date.now(),
-                text: text,
-                completed: false,
-                createdAt: new Date().toISOString()
-            };
-            
-            // Agregar a la lista
-            tasks.push(newTask);
-            
-            // Guardar en localStorage
-            saveTasks();
-            
-            // Limpiar input
-            taskInput.value = '';
-            
-            // Actualizar la vista
-            renderTasks();
-            updateStats();
-        }
-        
-        // Cambiar estado de una tarea (completada/pendiente)
-        function toggleTask(id) {
-            tasks = tasks.map(task => {
-                if (task.id === id) {
-                    return { ...task, completed: !task.completed };
-                }
-                return task;
-            });
-            
-            saveTasks();
-            renderTasks();
-            updateStats();
-        }
-        
-        // Eliminar una tarea
-        function deleteTask(id) {
-            if (confirm('¿Estás seguro de que quieres eliminar esta tarea?')) {
-                tasks = tasks.filter(task => task.id !== id);
-                saveTasks();
-                renderTasks();
-                updateStats();
-            }
-        }
-        
-        // Renderizar las tareas en la lista
-        function renderTasks() {
-            // Filtrar tareas según el filtro actual
-            let filteredTasks = tasks;
-            if (currentFilter === 'pending') {
-                filteredTasks = tasks.filter(task => !task.completed);
-            } else if (currentFilter === 'completed') {
-                filteredTasks = tasks.filter(task => task.completed);
-            }
-            
-            // Limpiar la lista
-            taskList.innerHTML = '';
-            
-            // Mostrar mensaje si no hay tareas
-            if (filteredTasks.length === 0) {
-                const emptyState = document.createElement('div');
-                emptyState.className = 'empty-state';
-                emptyState.innerHTML = `
-                    <div>📝</div>
-                    <p>No hay tareas ${currentFilter === 'all' ? '' : currentFilter}</p>
-                `;
-                taskList.appendChild(emptyState);
-                return;
-            }
-            
-            // Agregar cada tarea a la lista
-            filteredTasks.forEach(task => {
-                const taskItem = document.createElement('li');
-                taskItem.className = `task-item ${task.completed ? 'completed' : ''}`;
-                
-                taskItem.innerHTML = `
-                    <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
-                    <span class="task-text">${task.text}</span>
-                    <button class="delete-btn">🗑️</button>
-                `;
-                
-                // Event listeners para los elementos de la tarea
-                const checkbox = taskItem.querySelector('.task-checkbox');
-                const deleteBtn = taskItem.querySelector('.delete-btn');
-                
-                checkbox.addEventListener('change', () => toggleTask(task.id));
-                deleteBtn.addEventListener('click', () => deleteTask(task.id));
-                
-                taskList.appendChild(taskItem);
-            });
-        }
-        
-        // Actualizar estadísticas
-        function updateStats() {
-            const total = tasks.length;
-            const completed = tasks.filter(task => task.completed).length;
-            
-            totalTasksSpan.textContent = `Total: ${total}`;
-            completedTasksSpan.textContent = `Completadas: ${completed}`;
-        }
-        
-        // Guardar tareas en localStorage
-        function saveTasks() {
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-        }
-        
-        // Inicializar la aplicación cuando se carga la página
-        document.addEventListener('DOMContentLoaded', init);
-    </script>
 </body>
 </html>
+
