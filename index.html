@@ -1,33 +1,96 @@
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asignador de Tareas Colaborativo</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Lista de Tareas Compacta</title>
     <style>
         body {
-            font-family: 'Inter', sans-serif;
-            /* Fondo principal para el modo oscuro */
-            background-color: #111827; /* gray-900 */
-            color: #f3f4f6; /* gray-100 */
+            font-family: sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            margin: 0;
+            padding: 5px; /* Reducción de padding */
         }
-        /* Estilo para tachar el texto completado en Dark Mode */
+        .header {
+            padding: 5px 0; /* Reducción de padding */
+            border-bottom: 1px solid #ccc;
+            margin-bottom: 10px; /* Reducción de margen */
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 1.2em; /* Título más pequeño */
+            color: #1a1a1a;
+        }
+        h2 {
+            font-size: 1em; /* Subtítulos más pequeños */
+            color: #1a1a1a;
+            border-bottom: 1px dashed #ddd;
+            padding-bottom: 3px;
+            margin-top: 15px;
+        }
+        /* Contenedor de Tareas */
+        .task-list {
+            margin-bottom: 10px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            background-color: #fff;
+            border-radius: 3px;
+        }
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0; /* Espaciado de tarea reducido */
+            border-bottom: 1px dashed #eee;
+        }
+        .task-item:last-child {
+            border-bottom: none;
+        }
+        .task-details {
+            flex-grow: 1;
+            margin-right: 5px;
+            overflow-wrap: break-word; /* Para asegurar el ajuste en pantallas pequeñas */
+            min-width: 0;
+        }
+        .task-description {
+            font-weight: bold;
+            font-size: 0.9em; /* Descripción más pequeña */
+        }
+        .task-info {
+            font-size: 0.7em; /* Info extra más pequeña */
+            color: #666;
+        }
         .task-completed .task-description,
         .task-completed .task-assignee-text {
             text-decoration: line-through;
-            color: #4b5563; /* gray-600 */
+            color: #999;
         }
-        /* Clases para la transición de la barra lateral (Panel de Ajustes) */
-        .sidebar-panel {
-            transition: transform 0.3s ease-in-out;
+        .priority-alta {
+            color: red;
+            font-weight: bold;
         }
-        .sidebar-open {
-            transform: translateX(0);
+        .delete-button {
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 3px 6px;
+            font-size: 0.7em;
+            border-radius: 3px;
+            cursor: pointer;
+            flex-shrink: 0; /* No se encoge */
         }
-        .sidebar-closed {
-            transform: translateX(100%);
+        .completion-checkbox {
+            margin-right: 5px;
+            flex-shrink: 0;
         }
+        .empty-message {
+            text-align: center; color: #666; padding: 5px; background: #f0f0f0; border-radius: 4px; font-size: 0.8em;
+        }
+
     </style>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -40,10 +103,10 @@
         // CONFIGURACIÓN DE USUARIOS ASIGNABLES Y FIREBASE
         // =========================================================================================
         
-        // Variables de Autenticación
+        // Variables de Autenticación (Mantenidas para la lógica interna de la tarea, pero sin UI de login)
         const POPEYE_USER_ID = "Popeye";
         const PUBLIC_USER_ID = "PUBLIC_ACCESS"; 
-        let currentUserId = PUBLIC_USER_ID; // Estado inicial
+        let currentUserId = PUBLIC_USER_ID; // Siempre acceso público, sin login
 
         // Mapeo de IDs a Nombres para mostrar en la lista de tareas
         const ASSIGNEE_MAP = {
@@ -84,27 +147,10 @@
 
         function checkUserStatus() {
             const displayElement = document.getElementById('user-id-display');
-            const userStatusSection = document.getElementById('user-status-section');
-            
-            if (currentUserId === POPEYE_USER_ID) {
-                displayElement.textContent = `ID de Usuario: ${POPEYE_USER_ID} (Verificado)`;
-                displayElement.className = 'text-xs mt-1 text-green-400 font-bold';
-                userStatusSection.classList.remove('hidden');
-            } else {
-                displayElement.textContent = `ID de Usuario: ${PUBLIC_USER_ID} (Acceso Público)`;
-                displayElement.className = 'text-xs mt-1 text-gray-500';
-                userStatusSection.classList.add('hidden');
-            }
+            // Como quitamos el login, siempre mostramos acceso público
+            displayElement.textContent = `ID de Usuario: ${PUBLIC_USER_ID} (Acceso Público)`;
+            displayElement.style.color = 'gray';
         }
-
-        // Se ejecuta al cargar la página (comprueba si Popeye guardó la sesión)
-        (function initUser() {
-            const savedUserId = localStorage.getItem('savedUserId');
-            if (savedUserId === POPEYE_USER_ID) {
-                currentUserId = POPEYE_USER_ID;
-            }
-        })();
-
 
         try {
             app = initializeApp(firebaseConfig);
@@ -116,66 +162,14 @@
         } catch (error) {
             console.error("Error al inicializar Firebase:", error);
             document.getElementById('error-message').textContent = 'Error al inicializar Firebase. Revisa la consola y tu configuración.';
-            document.getElementById('error-message').classList.remove('hidden');
+            document.getElementById('error-message').style.display = 'block';
         }
 
 
-        // --- Funciones de Autenticación y Acceso Gated ---
-        
-        // Cierra el modal de autenticación
-        window.closeAuthModal = function() {
-            document.getElementById('auth-modal').classList.add('hidden');
-        }
-
-        window.loginUser = function() {
-            const usernameInput = document.getElementById('username-input');
-            const rememberCheckbox = document.getElementById('remember-user');
-            const enteredUsername = usernameInput.value.trim();
-
-            if (enteredUsername === POPEYE_USER_ID) {
-                currentUserId = POPEYE_USER_ID;
-                usernameInput.value = ''; // Limpiar input para cumplir el requisito
-                
-                if (rememberCheckbox.checked) {
-                    localStorage.setItem('savedUserId', POPEYE_USER_ID);
-                }
-
-                alertModal("Éxito", `¡Bienvenido, ${POPEYE_USER_ID}! Ahora tienes acceso al panel de ajustes.`);
-                checkUserStatus();
-                window.closeAuthModal();
-                window.toggleSettingsPanel(); // Abrir el panel después del login exitoso
-
-            } else {
-                alertModal("Error de Verificación", "Usuario incorrecto. Solo 'Popeye' está permitido.");
-                usernameInput.value = ''; // Limpiar input
-            }
-        }
-
-        window.logoutUser = function() {
-            localStorage.removeItem('savedUserId');
-            currentUserId = PUBLIC_USER_ID;
-            alertModal("Sesión Cerrada", "Has cerrado tu sesión. El panel de ajustes ya no es accesible.");
-            checkUserStatus();
-            window.closeSettingsPanel();
-        }
-
-        // --- Gate de Acceso: Decide si abre el panel o el modal ---
-        window.handleSettingsClick = function() {
-            if (currentUserId === POPEYE_USER_ID) {
-                // Si está verificado, abre el panel de ajustes (sidebar)
-                window.toggleSettingsPanel();
-            } else {
-                // Si NO está verificado, abre el modal de verificación/login
-                document.getElementById('auth-modal').classList.remove('hidden');
-                document.getElementById('username-input').value = ''; // Limpiar el input al abrir
-                document.getElementById('remember-user').checked = false; // Desmarcar
-            }
-        }
-
-        // --- Funciones de Firestore (SIN CAMBIOS EN LA CONFIGURACIÓN) ---
+        // --- Funciones de Firestore (Mantenidas) ---
+        // (La función addTask se mantiene, pero no se puede llamar sin un botón)
 
         function getTasksCollectionRef() {
-            // RUTA FIJA DE FIREBASE QUE GARANTIZA LA LECTURA DE TODAS LAS TAREAS
             const path = `artifacts/${appId}/public/data/tasks`;
             return collection(db, path);
         }
@@ -184,70 +178,24 @@
             return doc(db, `artifacts/${appId}/public/data/tasks/${taskId}`);
         }
 
-        window.addTask = async function() {
-            
-            const descriptionInput = document.getElementById('task-description');
-            const assigneeSelect = document.getElementById('task-assignee'); 
-            const prioritySelect = document.getElementById('task-priority');
-
-            const description = descriptionInput.value.trim();
-            const assigneeId = assigneeSelect.value.trim(); 
-            const priorityValue = prioritySelect.value.trim();
-
-            if (!description) {
-                alertModal("Error", "La descripción de la tarea no puede estar vacía.");
-                return;
-            }
-
-            const taskData = {
-                description: description,
-                assignee: assigneeId,
-                priority: priorityValue,
-                createdBy: currentUserId, 
-                createdAt: serverTimestamp(),
-                completed: false
-            };
-
-            try {
-                await addDoc(getTasksCollectionRef(), taskData);
-                descriptionInput.value = '';
-                assigneeSelect.value = 'Sin asignar'; 
-                prioritySelect.value = 'Media';
-                window.closeSettingsPanel();
-            } catch (e) {
-                console.error("Error al añadir documento (REVISA REGLAS): ", e);
-                alertModal("Error de Base de Datos", "No se pudo añadir la tarea. Asegúrate de que tus reglas de Firestore permitan el acceso público (if true).");
-            }
-        }
-
         window.toggleTaskCompletion = async function(taskId, currentStatus) {
             try {
                 const taskDocRef = getTaskDocRef(taskId);
                 await updateDoc(taskDocRef, { completed: !currentStatus });
             } catch (e) {
                 console.error("Error al actualizar el estado de la tarea (REVISA REGLAS): ", e);
-                alertModal("Error de Base de Datos", "No se pudo actualizar el estado de la tarea. Asegúrate de que tus reglas de Firestore permitan el acceso público (if true).");
+                // No hay modal de alerta, solo log en consola
             }
         }
 
         window.deleteTask = async function(taskId) {
+            if (!confirm('¿Estás seguro de que quieres eliminar esta tarea?')) return;
             try {
                 await deleteDoc(getTaskDocRef(taskId));
             } catch (e) {
                 console.error("Error al eliminar documento (REVISA REGLAS): ", e);
-                alertModal("Error de Base de Datos", "No se pudo eliminar la tarea. Asegúrate de que tus reglas de Firestore permitan el acceso público (if true).");
+                // No hay modal de alerta, solo log en consola
             }
-        }
-
-        function alertModal(title, message) {
-            const modal = document.getElementById('custom-modal');
-            document.getElementById('modal-title').textContent = title;
-            document.getElementById('modal-message').textContent = message;
-            modal.classList.remove('hidden');
-        }
-
-        window.closeModal = function() {
-            document.getElementById('custom-modal').classList.add('hidden');
         }
 
         function startRealtimeTaskListener() {
@@ -264,7 +212,7 @@
             }, (error) => {
                 console.error("Error al obtener instantánea de tareas:", error);
                 document.getElementById('error-message').textContent = 'Error de conexión en tiempo real con Firestore.';
-                document.getElementById('error-message').classList.remove('hidden');
+                document.getElementById('error-message').style.display = 'block';
             });
         }
 
@@ -274,9 +222,9 @@
             Object.values(ASSIGNEE_CONTAINERS).forEach(containerId => {
                 document.getElementById(containerId).innerHTML = '';
             });
-            document.getElementById('general-empty-message').classList.add('hidden');
+            document.getElementById('general-empty-message').style.display = 'none';
 
-            // 2. Agrupar y ordenar las tareas (Esta lógica NO ha cambiado la forma de leer la base de datos)
+            // 2. Agrupar y ordenar las tareas
             const groupedTasks = {};
             Object.keys(ASSIGNEE_MAP).forEach(id => {
                 if(ASSIGNEE_CONTAINERS[id]) { 
@@ -286,8 +234,6 @@
 
             tasks.forEach(task => {
                 const assigneeId = task.assignee || "Sin asignar";
-                // Garantizamos que las tareas se agrupen por el ID de asignación (assignee),
-                // independientemente de quién las haya creado.
                 const targetId = ASSIGNEE_CONTAINERS[assigneeId] ? assigneeId : "Sin asignar"; 
                 groupedTasks[targetId].push(task);
             });
@@ -300,15 +246,12 @@
                 
                 // Ordenar: Prioridad Alta primero, luego Pendientes (por fecha), luego Completadas.
                 taskList.sort((a, b) => {
-                    // Criterio 1: Prioridad (Alta primero)
                     if (a.priority === 'Alta' && b.priority !== 'Alta') return -1;
                     if (a.priority !== 'Alta' && b.priority === 'Alta') return 1;
 
-                    // Criterio 2: Estado (Pendientes primero)
                     if (a.completed !== b.completed) {
                         return a.completed ? 1 : -1; 
                     }
-                    // Criterio 3: Fecha de creación (más reciente primero)
                     const dateA = a.createdAt?.toMillis() || 0;
                     const dateB = b.createdAt?.toMillis() || 0;
                     return dateB - dateA;
@@ -317,7 +260,7 @@
 
                 if (taskList.length === 0) {
                     container.innerHTML = `
-                        <p class="text-center text-gray-600 py-4 bg-gray-800 rounded-lg border border-gray-700">
+                        <p class="empty-message">
                             No hay tareas asignadas a ${getAssigneeName(assigneeId)}.
                         </p>
                     `;
@@ -331,63 +274,43 @@
                         const isHighPriority = task.priority === 'Alta' && !isCompleted; 
 
                         const taskClass = isCompleted 
-                            ? 'task-completed bg-gray-700 border-green-700' 
-                            : (isHighPriority ? 'bg-red-900 border-red-700 hover:shadow-2xl' : 'bg-gray-800 border-gray-700 hover:shadow-lg');
+                            ? 'task-completed' 
+                            : (isHighPriority ? 'priority-alta-container' : '');
 
-                        let assigneeTextColor = 'text-blue-400';
-                        if (isCompleted) {
-                            assigneeTextColor = 'text-gray-600';
-                        } else if (isHighPriority) {
-                            assigneeTextColor = 'text-red-300 font-bold'; 
-                        }
+                        const priorityTextClass = isHighPriority ? 'priority-alta' : '';
                         
-                        const priorityIcon = isHighPriority 
-                            ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-400 ml-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-12a1 1 0 102 0V8a1 1 0 10-2 0V6zm0 6a1 1 0 102 0 1 1 0 00-2 0z" clip-rule="evenodd" /></svg>`
-                            : '';
-
-
                         const assigneeDisplayName = getAssigneeName(task.assignee);
                         const createdByDisplayName = getAssigneeName(task.createdBy) === PUBLIC_USER_ID ? 'Público' : getAssigneeName(task.createdBy);
 
                         const taskElement = `
-                            <div class="flex items-center justify-between p-4 border rounded-xl shadow-md transition duration-300 ease-in-out ${taskClass}">
+                            <div class="task-item ${taskClass}">
+                                <input
+                                    type="checkbox"
+                                    ${isCompleted ? 'checked' : ''}
+                                    onclick="toggleTaskCompletion('${task.id}', ${isCompleted})"
+                                    class="completion-checkbox"
+                                >
                                 
-                                <div class="flex items-center flex-1 min-w-0 mr-4">
-                                    <input
-                                        type="checkbox"
-                                        ${isCompleted ? 'checked' : ''}
-                                        onclick="toggleTaskCompletion('${task.id}', ${isCompleted})"
-                                        class="h-5 w-5 mr-4 text-blue-500 border-gray-600 bg-gray-700 rounded focus:ring-blue-500 cursor-pointer"
-                                    >
-
-                                    <div class="min-w-0">
-                                        <p class="task-description text-lg font-semibold text-gray-100 break-words">${task.description}</p>
-                                        <div class="mt-1 text-sm text-gray-400 space-y-1">
-                                            <p class="task-assignee flex items-center">
-                                                <span class="font-medium ${assigneeTextColor}">
-                                                    Asignado a: <span class="task-assignee-text">${assigneeDisplayName}</span>
-                                                </span>
-                                                <span class="ml-2 text-xs text-gray-500 italic">(${task.priority || 'N/A'})</span>
-                                                ${priorityIcon} 
-                                            </p>
-                                            <p class="text-xs text-gray-500">
-                                                <span class="font-medium">Creado por:</span> ${createdByDisplayName} el ${dateString}
-                                            </p>
-                                        </div>
+                                <div class="task-details">
+                                    <p class="task-description">${task.description}</p>
+                                    <div class="task-info">
+                                        <p>
+                                            Asignado a: <span class="task-assignee-text ${priorityTextClass}">${assigneeDisplayName}</span>
+                                            <span class="priority-label">(${task.priority || 'N/A'})</span>
+                                        </p>
+                                        <p>
+                                            Creado por: ${createdByDisplayName} el ${dateString}
+                                        </p>
                                     </div>
                                 </div>
 
-                                <div class="flex-shrink-0 flex items-center space-x-2">
-                                    <button
-                                        onclick="deleteTask('${task.id}')"
-                                        class="p-2 text-red-400 bg-gray-700 hover:bg-gray-600 rounded-full transition duration-150 ease-in-out"
-                                        title="Eliminar Tarea"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                        </svg>
-                                    </button>
-                                </div>
+                                <button
+                                    onclick="deleteTask('${task.id}')"
+                                    class="delete-button"
+                                    title="Eliminar Tarea"
+                                >
+                                    X
+                                </button>
                             </div>
                         `;
                         container.insertAdjacentHTML('beforeend', taskElement);
@@ -396,242 +319,56 @@
             });
             
             if(tasks.length === 0) {
-                 document.getElementById('general-empty-message').classList.remove('hidden');
-                 document.getElementById('general-empty-message').innerHTML = 'No hay tareas registradas. ¡Añade una abriendo el panel de ajustes (la tuerquita)!';
-            }
-        }
-
-        // --- Funciones para la Barra Lateral (Sidebar) ---
-        window.isSidebarOpen = false;
-
-        window.toggleSettingsPanel = function() {
-            const panel = document.getElementById('settings-panel');
-            const overlay = document.getElementById('sidebar-overlay');
-            const button = document.getElementById('settings-button');
-            
-            window.isSidebarOpen = !window.isSidebarOpen;
-
-            if (window.isSidebarOpen) {
-                panel.classList.remove('sidebar-closed');
-                panel.classList.add('sidebar-open');
-                overlay.classList.remove('hidden');
-                button.classList.add('rotate-45'); 
-            } else {
-                panel.classList.remove('sidebar-open');
-                panel.classList.add('sidebar-closed');
-                overlay.classList.add('hidden');
-                button.classList.remove('rotate-45');
-            }
-        }
-
-        window.closeSettingsPanel = function() {
-            if (window.isSidebarOpen) {
-                window.toggleSettingsPanel();
+                 document.getElementById('general-empty-message').style.display = 'block';
+                 document.getElementById('general-empty-message').innerHTML = 'No hay tareas registradas.';
             }
         }
     </script>
 </head>
-<body class="min-h-screen">
+<body>
 
-    <div class="max-w-4xl mx-auto p-4 md:p-8">
-        <header class="flex justify-between items-center mb-8">
-            <div class="text-left">
-                <h1 class="text-3xl font-extrabold text-white tracking-tight">
-                    Asignador de Tareas <span class="text-blue-400">EKT</span>
-                </h1>
-                <p class="text-gray-400 mt-1">Tareas agrupadas por responsable.</p>
-                <p id="user-id-display" class="text-xs mt-1 text-gray-500">ID de Usuario: Cargando...</p>
+    <div class="container">
+        <header class="header">
+            <div>
+                <h1>Lista de Tareas (Solo Lectura)</h1>
+                <p style="font-size: 0.8em; color: #666; margin-top: 3px;">Tareas agrupadas por responsable.</p>
+                <p id="user-id-display" style="font-size: 0.7em; margin-top: 5px;"></p>
             </div>
-            
-            <button
-                id="settings-button"
-                onclick="handleSettingsClick()"
-                class="p-3 text-blue-400 bg-gray-800 hover:bg-gray-700 border border-blue-800 rounded-full shadow-lg transition duration-300 transform hover:scale-105"
-                title="Añadir Tarea / Ajustes"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 transition-transform duration-300 ease-in-out" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.106.066.21.13.31.196zm4.14 8.795a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                </svg>
-            </button>
         </header>
-        <hr class="mb-8 border-gray-700"/>
 
-        <p id="error-message" class="text-red-500 text-center mb-6 hidden"></p>
-        <div id="general-empty-message" class="text-center text-gray-500 py-10 bg-gray-800 rounded-xl shadow-md border border-gray-700">
+        <p id="error-message" style="color: red; text-align: center; margin-bottom: 10px; display: none; font-size: 0.8em;"></p>
+        <div id="general-empty-message" class="empty-message" style="border: 1px dashed #ccc; background-color: #fff;">
              Cargando tareas...
         </div>
 
-
-        <div class="space-y-10">
+        <div style="margin-top: 15px; padding-bottom: 15px;">
 
             <div>
-                <h2 class="text-xl font-bold text-white mb-3 border-b border-blue-500 pb-1">👤 Henry</h2>
-                <div id="tasks-container-henry" class="space-y-4">
+                <h2>👤 Henry</h2>
+                <div id="tasks-container-henry" class="task-list">
                     </div>
             </div>
 
             <div>
-                <h2 class="text-xl font-bold text-white mb-3 border-b border-blue-500 pb-1">👤 Carlos</h2>
-                <div id="tasks-container-carlos" class="space-y-4">
+                <h2>👤 Carlos</h2>
+                <div id="tasks-container-carlos" class="task-list">
                     </div>
             </div>
             
             <div>
-                <h2 class="text-xl font-bold text-white mb-3 border-b border-blue-500 pb-1">👤 Ammy</h2>
-                <div id="tasks-container-ammy" class="space-y-4">
+                <h2>👤 Ammy</h2>
+                <div id="tasks-container-ammy" class="task-list">
                     </div>
             </div>
 
             <div>
-                <h2 class="text-xl font-bold text-gray-400 mb-3 border-b border-gray-600 pb-1">❓ Tareas Sin Asignar</h2>
-                <div id="tasks-container-unassigned" class="space-y-4">
+                <h2>❓ Tareas Sin Asignar</h2>
+                <div id="tasks-container-unassigned" class="task-list" style="border-color: #999;">
                     </div>
             </div>
 
         </div>
 
     </div>
-
-    <div 
-        id="sidebar-overlay" 
-        class="hidden fixed inset-0 bg-black bg-opacity-75 z-40 transition-opacity duration-300"
-        onclick="closeSettingsPanel()"
-    ></div>
-
-    <div 
-        id="settings-panel" 
-        class="sidebar-panel sidebar-closed fixed top-0 right-0 w-full md:w-96 h-full bg-gray-900 z-50 shadow-2xl overflow-y-auto p-6 border-l-4 border-blue-600"
-    >
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-100">Panel de Ajustes</h2>
-            <button onclick="closeSettingsPanel()" class="text-gray-400 hover:text-white transition duration-150">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-        
-        <div id="user-status-section" class="bg-gray-800 p-6 rounded-xl shadow-lg mb-6 border border-green-700 hidden">
-            <h3 class="text-xl font-bold text-green-400 mb-4">✅ Sesión Activa como Popeye</h3>
-            <p class="text-sm text-gray-300 mb-4">Tus tareas serán firmadas como **Popeye**. Haz clic para cerrar la sesión de la aplicación.</p>
-             <button
-                onclick="logoutUser()"
-                class="w-full py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition duration-200"
-            >
-                Cerrar Sesión y Bloquear Ajustes
-            </button>
-        </div>
-
-        <div class="bg-gray-800 p-6 rounded-xl shadow-lg mb-6 border border-blue-800">
-            <h3 class="text-xl font-bold text-gray-100 mb-4">➕ Añadir Nueva Tarea</h3>
-            <form id="task-form" onsubmit="event.preventDefault(); addTask();">
-                <div class="space-y-4">
-                    <div>
-                        <label for="task-description" class="block text-sm font-medium text-gray-300 mb-1">Descripción</label>
-                        <input
-                            type="text"
-                            id="task-description"
-                            placeholder="Escribe la tarea a asignar"
-                            required
-                            class="w-full px-4 py-2 border border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 bg-gray-700 text-white"
-                        >
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="task-assignee" class="block text-sm font-medium text-gray-300 mb-1">Asignar a</label>
-                            <select
-                                id="task-assignee"
-                                class="w-full px-4 py-2 border border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 bg-gray-700 text-white appearance-none"
-                            >
-                                <option value="Sin asignar">-- Sin asignar --</option>
-                                <option value="2004211109">Henry (2004211109)</option>
-                                <option value="2005209090">Carlos (2005209090)</option>
-                                <option value="2006190501">Ammy (2006190501)</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label for="task-priority" class="block text-sm font-medium text-gray-300 mb-1">Prioridad</label>
-                            <select
-                                id="task-priority"
-                                class="w-full px-4 py-2 border border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 bg-gray-700 text-white appearance-none"
-                            >
-                                <option value="Media">Media</option>
-                                <option value="Alta" class="text-red-500">Alta (⚠️)</option>
-                                <option value="Baja">Baja</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <button
-                    type="submit"
-                    class="mt-6 w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition duration-200 transform hover:scale-[1.01]"
-                >
-                    Añadir Tarea
-                </button>
-            </form>
-        </div>
-        
-        <div class="text-sm text-gray-400 mt-8 p-4 border border-gray-700 rounded-lg bg-gray-800 shadow-inner">
-            <p class="font-bold mb-2 text-gray-300">Recordatorio de Firebase:</p>
-            <p>El sistema se conecta automáticamente a la colección `public/data/tasks` de tu proyecto. El campo **Asignado a** es el que define dónde aparece la tarea, no el campo **Creado por**.</p>
-        </div>
-
-    </div>
-
-    <div id="custom-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300">
-        <div class="bg-gray-800 p-6 rounded-xl shadow-2xl max-w-sm w-full transform transition-all duration-300 scale-100 border border-red-800">
-            <h3 id="modal-title" class="text-xl font-bold text-red-400 mb-3">Error</h3>
-            <p id="modal-message" class="text-gray-300 mb-5">Mensaje de error.</p>
-            <button
-                onclick="closeModal()"
-                class="w-full py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200"
-            >
-                Entendido
-            </button>
-        </div>
-    </div>
-    
-    <div id="auth-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 transition-opacity duration-300">
-        <div class="bg-gray-800 p-6 rounded-xl shadow-2xl max-w-sm w-full transform transition-all duration-300 scale-100 border border-yellow-800">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-yellow-400">🔑 Acceso a Ajustes</h3>
-                <button onclick="closeAuthModal()" class="text-gray-400 hover:text-white transition duration-150">
-                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            
-            <p class="text-sm text-gray-400 mb-4">Ingresa como "Popeye" para abrir el panel de ajustes.</p>
-            <form onsubmit="event.preventDefault(); loginUser();">
-                <div class="space-y-4">
-                    <div>
-                        <label for="username-input" class="block text-sm font-medium text-gray-300 mb-1">Nombre de Usuario</label>
-                        <input
-                            type="text"
-                            id="username-input"
-                            placeholder="Solo 'Popeye' está permitido"
-                            class="w-full px-4 py-2 border border-gray-600 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 transition duration-150 bg-gray-700 text-white"
-                        >
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <input id="remember-user" type="checkbox" class="h-4 w-4 text-blue-600 border-gray-600 rounded bg-gray-700 focus:ring-blue-500">
-                            <label for="remember-user" class="ml-2 block text-sm text-gray-300">Guardar usuario</label>
-                        </div>
-                        <button
-                            type="submit"
-                            class="py-2 px-4 bg-yellow-600 text-white font-semibold rounded-lg hover:bg-yellow-700 transition duration-200"
-                        >
-                            Verificar y Acceder
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
 </body>
 </html>
